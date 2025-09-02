@@ -6,6 +6,8 @@ import Header from './components/header.jsx';
 import Footer from './components/footer.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import HomePage from './pages/HomePage.jsx';
+import CustomerMeals from './pages/CustomerMeals.jsx'
+import AdminMeals from './pages/AdminMeals.jsx'
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Routes path="/*">
         <Route path="/admin/*" element={<AdminPage />} />
         <Route path="/admin/manage-vehicles" element={<VehiclePage />} />
+        <Route path="/admin/manage-meals" element={<AdminMeals />} />
+        <Route path="/meals" element={<CustomerMeals />} />
         <Route path="/" element={<HomePage />} />
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
