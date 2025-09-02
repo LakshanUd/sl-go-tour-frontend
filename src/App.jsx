@@ -2,10 +2,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './app.css';
 import { Toaster } from 'react-hot-toast';
 import VehiclePage from './pages/VehiclePage.jsx';
+import InventoryPage from "./pages/InventoryPage";
 import Header from './components/header.jsx';
 import Footer from './components/footer.jsx';
 import AdminPage from './pages/AdminPage.jsx';
 import HomePage from './pages/HomePage.jsx';
+import AccommodationPage from "./pages/AccommodationPage";
+
 
 function App() {
   return (
@@ -15,6 +18,8 @@ function App() {
       <Routes path="/*">
         <Route path="/admin/*" element={<AdminPage />} />
         <Route path="/admin/manage-vehicles" element={<VehiclePage />} />
+        <Route path="/admin/manage-inventory" element={<InventoryPage />} />
+        <Route path="/accommodation" element={<AccommodationPage />} />
         <Route path="/" element={<HomePage />} />
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>
