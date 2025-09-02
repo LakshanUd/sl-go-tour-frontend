@@ -1,8 +1,14 @@
 // src/pages/BlogsAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
-import { fetchBlogs, createBlog, updateBlog, deleteBlog } from "../lib/api.js";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import { confirmToast } from "../components/ConfirmToast"; // custom confirm (OK/Cancel)
+
+/* ================= Theme tokens (match Header/Footer) ================= */
+const gradFrom = "from-[#DA22FF]";
+const gradTo = "to-[#9733EE]";
+const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
+const gradText = `text-transparent bg-clip-text bg-gradient-to-r ${gradFrom} ${gradTo}`;
 
 export default function BlogsAdmin() {
   const [rows, setRows] = useState([]);
@@ -23,17 +29,14 @@ export default function BlogsAdmin() {
   // filters
   const [q, setQ] = useState("");
 
-  // gradient tokens to match Header.jsx
-  const gradFrom = "from-[#DA22FF]";
-  const gradTo = "to-[#9733EE]";
-  const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
-  const gradText = `text-transparent bg-clip-text bg-gradient-to-r ${gradFrom} ${gradTo}`;
-
   const reload = async () => {
-    setLoading(true);
-    const data = await fetchBlogs();
-    setRows(data);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const data = await fetchBlogs();
+      setRows(data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -79,9 +82,7 @@ export default function BlogsAdmin() {
             .map((t) => t.trim())
             .filter(Boolean)
         : [],
-      publishedDate: form.publishedDate
-        ? new Date(form.publishedDate)
-        : undefined,
+      publishedDate: form.publishedDate ? new Date(form.publishedDate) : undefined,
     };
 
     try {
@@ -95,29 +96,39 @@ export default function BlogsAdmin() {
       await reload();
       closeModal();
     } catch (e) {
-      // errors already toasted in api layer (if you kept that)
+      toast.error(e?.message || "Save failed");
     }
   };
 
-  const onDelete = async (id) => {
-    if (!confirm("Delete this blog?")) return;
-    await deleteBlog(id);
-    setRows((prev) => prev.filter((r) => r._id !== id));
+  // DELETE with custom confirmation box
+  const onDelete = async (id, title) => {
+    const ok = await confirmToast({
+      title: "Delete blog?",
+      message: `Delete “${title || "this blog"}”? This cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!ok) return;
+
+    try {
+      await deleteBlog(id);
+      toast.success("Blog deleted");
+      setRows((prev) => prev.filter((r) => r._id !== id));
+    } catch (e) {
+      toast.error(e?.message || "Delete failed");
+    }
   };
 
   const prettyRows = useMemo(() => {
     const filtered = rows.filter((r) => {
       if (!q) return true;
-      const hay =
-        `${r.title} ${r.author} ${(r.tags || []).join(", ")}`.toLowerCase();
+      const hay = `${r.title} ${r.author} ${(r.tags || []).join(", ")}`.toLowerCase();
       return hay.includes(q.toLowerCase());
     });
 
     return filtered.map((r) => ({
       ...r,
-      date: r.publishedDate
-        ? new Date(r.publishedDate).toLocaleDateString()
-        : "-",
+      date: r.publishedDate ? new Date(r.publishedDate).toLocaleDateString() : "-",
       tagsCSV: (r.tags || []).join(", "),
     }));
   }, [rows, q]);
@@ -125,19 +136,18 @@ export default function BlogsAdmin() {
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
       <Toaster position="top-right" />
+
       {/* Header row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">
             Manage <span className={gradText}>Blogs</span>
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Create, edit, and delete blog posts.
-          </p>
+          <p className="text-sm text-neutral-500 mt-1">Create, edit, and delete blog posts.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Search box (matches Header style) */}
+          {/* Search (gradient ring on focus) */}
           <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
             <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-64 border border-neutral-200 transition-colors group-focus-within:border-transparent">
               <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
@@ -152,7 +162,7 @@ export default function BlogsAdmin() {
             </div>
           </div>
 
-          {/* New Blog button (gradient border / fill) */}
+          {/* New Blog */}
           <button
             onClick={openCreate}
             className={`inline-flex items-center gap-2 rounded-full p-[2px] ${gradBG} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DA22FF]/50 focus-visible:ring-offset-2`}
@@ -165,7 +175,7 @@ export default function BlogsAdmin() {
         </div>
       </div>
 
-      {/* Card / table container */}
+      {/* Table */}
       <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-6 text-neutral-600">Loading…</div>
@@ -186,10 +196,8 @@ export default function BlogsAdmin() {
               <tbody className="divide-y divide-neutral-100">
                 {prettyRows.map((r) => (
                   <tr key={r._id} className="hover:bg-neutral-50/60">
-                    <td className="px-4 py-3 max-w-[380px]">
-                      <div className="truncate font-medium text-neutral-800">
-                        {r.title}
-                      </div>
+                    <td className="px-4 py-3 max-w-[420px]">
+                      <div className="truncate font-medium text-neutral-800">{r.title}</div>
                     </td>
                     <td className="px-4 py-3 text-neutral-700">{r.author}</td>
                     <td className="px-4 py-3">
@@ -208,7 +216,7 @@ export default function BlogsAdmin() {
                           Edit
                         </button>
                         <button
-                          onClick={() => onDelete(r._id)}
+                          onClick={() => onDelete(r._id, r.title)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-200 hover:bg-white shadow-sm text-red-600"
                           aria-label="Delete"
                           title="Delete"
@@ -232,14 +240,8 @@ export default function BlogsAdmin() {
           <div className={`rounded-2xl p-[1px] ${gradBG} shadow-xl`}>
             <div className="rounded-2xl bg-white">
               <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
-                <div className="font-semibold">
-                  {editing ? "Edit Blog" : "Create Blog"}
-                </div>
-                <button
-                  onClick={closeModal}
-                  className="p-2 rounded-md hover:bg-neutral-100"
-                  aria-label="Close"
-                >
+                <div className="font-semibold">{editing ? "Edit Blog" : "Create Blog"}</div>
+                <button onClick={closeModal} className="p-2 rounded-md hover:bg-neutral-100" aria-label="Close">
                   <X className="h-5 w-5 text-neutral-700" />
                 </button>
               </div>
@@ -250,9 +252,7 @@ export default function BlogsAdmin() {
                     <Label>Title</Label>
                     <Input
                       value={form.title}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, title: e.target.value }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                       placeholder="Enter blog title"
                     />
                   </div>
@@ -260,9 +260,7 @@ export default function BlogsAdmin() {
                     <Label>Author</Label>
                     <Input
                       value={form.author}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, author: e.target.value }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
                       placeholder="Author name"
                     />
                   </div>
@@ -272,9 +270,7 @@ export default function BlogsAdmin() {
                     <Textarea
                       rows={8}
                       value={form.content}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, content: e.target.value }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
                       placeholder="<p>Rich text or plain text here…</p>"
                     />
                   </div>
@@ -283,9 +279,7 @@ export default function BlogsAdmin() {
                     <Label>Image URL</Label>
                     <Input
                       value={form.image}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, image: e.target.value }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
                       placeholder="https://…"
                     />
                   </div>
@@ -294,9 +288,7 @@ export default function BlogsAdmin() {
                     <Input
                       type="date"
                       value={form.publishedDate}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, publishedDate: e.target.value }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, publishedDate: e.target.value }))}
                     />
                   </div>
 
@@ -304,9 +296,7 @@ export default function BlogsAdmin() {
                     <Label>Tags (comma separated)</Label>
                     <Input
                       value={form.tags}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, tags: e.target.value }))
-                      }
+                      onChange={(e) => setForm((f) => ({ ...f, tags: e.target.value }))}
                       placeholder="travel, sri lanka, tips"
                     />
                     <TagPreview csv={form.tags} />
@@ -320,10 +310,7 @@ export default function BlogsAdmin() {
                   >
                     Cancel
                   </button>
-                  <button
-                    onClick={submit}
-                    className={`px-4 py-2 rounded-xl text-white ${gradBG}`}
-                  >
+                  <button onClick={submit} className={`px-4 py-2 rounded-xl text-white ${gradBG}`}>
                     {editing ? "Update" : "Create"}
                   </button>
                 </div>
@@ -336,7 +323,7 @@ export default function BlogsAdmin() {
   );
 }
 
-/* -------- Reusable tiny UI bits (Tailwind) -------- */
+/* ---------------- Small UI bits ---------------- */
 
 function Label({ children }) {
   return <label className="block text-sm font-medium mb-1.5">{children}</label>;
@@ -373,7 +360,7 @@ function TagRow({ tagsCSV }) {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean)
-    .slice(0, 4); // show up to 4 in table
+    .slice(0, 4);
   if (tags.length === 0) return <span className="text-neutral-500">—</span>;
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -409,7 +396,7 @@ function TagPreview({ csv }) {
   );
 }
 
-/* -------- Minimal modal (no external lib) -------- */
+/* ---------------- Minimal modal ---------------- */
 
 function Modal({ open, onClose, children }) {
   if (!open) return null;
@@ -426,4 +413,108 @@ function Modal({ open, onClose, children }) {
       </div>
     </div>
   );
+}
+
+/* ======================= Local API (works without backend) ======================= */
+/* Replace with real HTTP calls when your backend is ready:
+      - GET    /api/blogs
+      - POST   /api/blogs
+      - PUT    /api/blogs/:id
+      - DELETE /api/blogs/:id
+*/
+const LS_KEY = "gotour_blogs";
+
+function uid() {
+  return `b_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+async function fetchBlogs() {
+  await delay(120);
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) {
+    const seed = [
+      {
+        _id: uid(),
+        title: "Top 5 Beaches in Sri Lanka",
+        author: "Admin",
+        content:
+          "<p>Discover pristine sands, turquoise waters, and hidden coves across the island.</p>",
+        image: "",
+        tags: ["beach", "sri lanka", "guide"],
+        publishedDate: new Date().toISOString(),
+      },
+      {
+        _id: uid(),
+        title: "Ella in 48 Hours",
+        author: "Sam",
+        content: "<p>Tea trails, Nine Arch Bridge, and panoramic hikes.</p>",
+        image: "",
+        tags: ["ella", "mountains"],
+        publishedDate: new Date(Date.now() - 86400000 * 3).toISOString(),
+      },
+    ];
+    localStorage.setItem(LS_KEY, JSON.stringify(seed));
+    return seed;
+  }
+  return JSON.parse(raw);
+}
+
+async function createBlog(doc) {
+  await delay(100);
+  const all = await fetchBlogs();
+  const _id = uid();
+  const payload = {
+    _id,
+    title: doc.title?.trim() || "Untitled",
+    author: doc.author?.trim() || "Admin",
+    content: doc.content || "",
+    image: doc.image || "",
+    tags: Array.isArray(doc.tags) ? doc.tags : [],
+    publishedDate: doc.publishedDate ? new Date(doc.publishedDate).toISOString() : new Date().toISOString(),
+  };
+  const next = [_assignDefaults(payload), ...all];
+  localStorage.setItem(LS_KEY, JSON.stringify(next));
+  return { _id };
+}
+
+async function updateBlog(id, patch) {
+  await delay(100);
+  const all = await fetchBlogs();
+  const idx = all.findIndex((x) => x._id === id);
+  if (idx === -1) throw new Error("Blog not found");
+  const merged = {
+    ...all[idx],
+    ...patch,
+    tags: Array.isArray(patch.tags) ? patch.tags : all[idx].tags,
+    publishedDate: patch.publishedDate
+      ? new Date(patch.publishedDate).toISOString()
+      : all[idx].publishedDate,
+  };
+  all[idx] = _assignDefaults(merged);
+  localStorage.setItem(LS_KEY, JSON.stringify(all));
+  return true;
+}
+
+async function deleteBlog(id) {
+  await delay(80);
+  const all = await fetchBlogs();
+  const next = all.filter((x) => x._id !== id);
+  localStorage.setItem(LS_KEY, JSON.stringify(next));
+  return true;
+}
+
+function _assignDefaults(b) {
+  return {
+    _id: b._id,
+    title: b.title || "Untitled",
+    author: b.author || "Admin",
+    content: b.content || "",
+    image: b.image || "",
+    tags: Array.isArray(b.tags) ? b.tags : [],
+    publishedDate: b.publishedDate || new Date().toISOString(),
+  };
+}
+
+function delay(ms = 0) {
+  return new Promise((r) => setTimeout(r, ms));
 }
