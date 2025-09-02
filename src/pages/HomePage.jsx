@@ -13,32 +13,39 @@ import {
   Plane,
   Car,
   BedDouble,
+  MapPin,
+  DollarSign,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-/* ---------- Theme tokens (module scope) ---------- */
+/* ---------- Theme tokens ---------- */
 const GRAD_FROM = "from-[#DA22FF]";
 const GRAD_TO = "to-[#9733EE]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
 const GRAD_TEXT = `text-transparent bg-clip-text bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
-/* Gradient hover only for text (so icons keep single color) */
 const LINK_TEXT_HOVER =
   "hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]";
 
-/* ---------- Page ---------- */
 export default function HomePage() {
   const nav = useNavigate();
 
-  /* Hero background slideshow (3 images) */
+  /* Background slideshow (6s, slow zoom on active) */
   const HERO_IMAGES = ["/hero-1.jpg", "/hero-2.jpg", "/hero-3.jpg"];
   const [slide, setSlide] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setSlide((s) => (s + 1) % HERO_IMAGES.length), 4500);
+    const t = setInterval(() => setSlide((s) => (s + 1) % HERO_IMAGES.length), 6000);
     return () => clearInterval(t);
   }, []);
 
   /* Search form */
-  const [form, setForm] = useState({ q: "", from: "", to: "", guests: 2 });
+  const [form, setForm] = useState({
+    q: "",
+    fromLocation: "",
+    from: "",
+    to: "",
+    guests: 2,
+    budget: "",
+  });
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: name === "guests" ? Number(value) || 1 : value }));
@@ -47,177 +54,189 @@ export default function HomePage() {
     e.preventDefault();
     const params = new URLSearchParams({
       q: form.q || "",
+      fromLocation: form.fromLocation || "",
       from: form.from || "",
       to: form.to || "",
       guests: String(form.guests || 1),
+      budget: form.budget || "",
     }).toString();
     nav(`/tours?${params}`);
   };
 
   return (
     <div className="min-h-screen">
-      {/* ============== HERO ============== */}
-      <section className="relative overflow-hidden">
-        {/* BG slideshow */}
-        <div className="absolute inset-0 z-0">
+      {/* ================= HERO ================= */}
+      <section className="relative overflow-hidden min-h-[70vh] sm:min-h-[80vh]">
+        {/* Background crossfade + slow zoom */}
+        <div className="absolute inset-0 -z-10">
           {HERO_IMAGES.map((src, i) => (
             <img
               key={src}
               src={src}
               alt=""
               aria-hidden="true"
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-                i === slide ? "opacity-100" : "opacity-0"
-              }`}
+              className={[
+                "absolute inset-0 h-full w-full object-cover",
+                "transition-opacity duration-700",
+                "transition-transform duration-[6000ms] ease-out",
+                i === slide ? "opacity-100 scale-110" : "opacity-0 scale-100",
+              ].join(" ")}
               loading="eager"
             />
           ))}
+          {/* Black overlay for contrast */}
+          <div className="absolute inset-0 bg-black/65" />
         </div>
-        {/* Dark overlay */}
-        <div className="absolute inset-0 z-10 bg-gradient-to-br from-black/70 via-neutral-900/60 to-black/70" />
 
-        <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            {/* Left copy */}
-            <div className="text-white">
-              <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight">
-                <span className={GRAD_TEXT}>Plan, book & manage</span> your journeys — all in one place.
-              </h1>
-              <p className="mt-4 text-neutral-200 max-w-xl">
-                A minimal, modern Tourism Management System for tours, vehicles, stays, and bookings.
-              </p>
+        {/* Hero copy */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="max-w-3xl text-white">
+            <p className="text-xs tracking-widest uppercase text-white/70">GoTour TMS</p>
+            <h1 className="mt-2 text-3xl sm:text-5xl font-semibold tracking-tight">
+              <span className={GRAD_TEXT}>Plan, book & manage</span> your journeys — all in one place.
+            </h1>
+            <p className="mt-4 text-white/85">
+              A minimal, modern Tourism Management System for tours, vehicles, stays, and bookings —
+              built for speed and simplicity.
+            </p>
 
-              {/* Search form — roomier + gradient border on focus; icons single color */}
-              <form
-                onSubmit={onSearch}
-                className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3 bg-white/90 backdrop-blur rounded-xl border"
+            {/* Quick CTAs — icons color only on hover */}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/tours"
+                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 bg-white/0 text-white hover:bg-white/10 cursor-pointer"
               >
-                {/* Destination */}
-                <div className="sm:col-span-2 lg:col-span-2 group rounded-lg p-[1px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
-                  <div className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
-                    <Search className="h-4 w-4 text-[#9733EE]" />
-                    <input
-                      name="q"
-                      value={form.q}
-                      onChange={onChange}
-                      placeholder="Where to?"
-                      className="w-full bg-transparent outline-none text-sm text-neutral-700 placeholder:text-neutral-500"
-                    />
-                  </div>
-                </div>
-
-                {/* From date */}
-                <div className="group rounded-lg p-[1px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
-                  <div className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
-                    <Calendar className="h-4 w-4 text-[#9733EE]" />
-                    <input
-                      type="date"
-                      name="from"
-                      value={form.from}
-                      onChange={onChange}
-                      className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
-                    />
-                  </div>
-                </div>
-
-                {/* To date */}
-                <div className="group rounded-lg p-[1px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
-                  <div className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
-                    <Calendar className="h-4 w-4 text-[#9733EE]" />
-                    <input
-                      type="date"
-                      name="to"
-                      value={form.to}
-                      onChange={onChange}
-                      className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Guests */}
-                <div className="group rounded-lg p-[1px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
-                  <div className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
-                    <Users className="h-4 w-4 text-[#9733EE]" />
-                    <input
-                      type="number"
-                      min={1}
-                      name="guests"
-                      value={form.guests}
-                      onChange={onChange}
-                      placeholder="Guests"
-                      className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Button */}
-                <button
-                  type="submit"
-                  className={`sm:col-span-2 lg:col-span-5 rounded-lg py-2 text-white hover:opacity-95 active:opacity-90 ${GRAD_BG}`}
-                >
-                  Search trips
-                </button>
-              </form>
-
-              {/* Quick CTAs (icons single color; gradient only on text span) */}
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link
-                  to="/tours"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/30 bg-white/0 text-white hover:bg-white/10 cursor-pointer"
-                >
-                  <Plane className="h-4 w-4 text-white" />
-                  <span className={LINK_TEXT_HOVER}>Browse Tours</span>
-                </Link>
-                <Link
-                  to="/admin/vehicle"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/30 bg-white/0 text-white hover:bg-white/10 cursor-pointer"
-                >
-                  <Car className="h-4 w-4 text-white" />
-                  <span className={LINK_TEXT_HOVER}>Manage Vehicles</span>
-                </Link>
-                <Link
-                  to="/accommodation"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/30 bg-white/0 text-white hover:bg-white/10 cursor-pointer"
-                >
-                  <BedDouble className="h-4 w-4 text-white" />
-                  <span className={LINK_TEXT_HOVER}>Stay Options</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Right slideshow frame */}
-            <div className="relative">
-              <div className="relative h-72 sm:h-96 rounded-2xl border border-white/20 overflow-hidden shadow-sm">
-                {HERO_IMAGES.map((src, i) => (
-                  <img
-                    key={src}
-                    src={src}
-                    alt={`Hero ${i + 1}`}
-                    className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-                      i === slide ? "opacity-100" : "opacity-0"
-                    }`}
-                    loading="eager"
-                  />
-                ))}
-              </div>
-              {/* dots */}
-              <div className="mt-3 flex items-center gap-2">
-                {HERO_IMAGES.map((_, i) => (
-                  <button
-                    key={i}
-                    aria-label={`Go to slide ${i + 1}`}
-                    onClick={() => setSlide(i)}
-                    className={["h-2.5 rounded-full transition-all", i === slide ? "w-6 bg-white" : "w-2.5 bg-white/50 hover:bg-white/70"].join(" ")}
-                  />
-                ))}
-              </div>
+                <Plane className="h-4 w-4 text-white/70 transition-colors group-hover:text-[#9733EE]" />
+                <span className={LINK_TEXT_HOVER}>Browse Tours</span>
+              </Link>
+              <Link
+                to="/admin/vehicle"
+                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 bg-white/0 text-white hover:bg-white/10 cursor-pointer"
+              >
+                <Car className="h-4 w-4 text-white/70 transition-colors group-hover:text-[#9733EE]" />
+                <span className={LINK_TEXT_HOVER}>Manage Vehicles</span>
+              </Link>
+              <Link
+                to="/accommodation"
+                className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/20 bg-white/0 text-white hover:bg-white/10 cursor-pointer"
+              >
+                <BedDouble className="h-4 w-4 text-white/70 transition-colors group-hover:text-[#9733EE]" />
+                <span className={LINK_TEXT_HOVER}>Stay Options</span>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ============== VALUE PROPS ============== */}
-      <section className="py-10">
+      {/* ================= SEARCH FORM (below hero, top half overlaps into hero) ================= */}
+      <section className="relative z-20 -mt-8 sm:-mt-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <form
+            onSubmit={onSearch}
+            className="mx-auto bg-white/95 backdrop-blur rounded-2xl border border-white/40 p-3
+                       flex flex-wrap items-center justify-center gap-3 shadow-lg"
+          >
+            {/* Destination */}
+            <div className="group rounded-xl p-[1px] w-full sm:w-[240px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
+              <div className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
+                <Search className="h-4 w-4 text-[#9733EE]" />
+                <input
+                  name="q"
+                  value={form.q}
+                  onChange={onChange}
+                  placeholder="Where to?"
+                  className="w-full bg-transparent outline-none text-sm text-neutral-700 placeholder:text-neutral-500"
+                />
+              </div>
+            </div>
+
+            {/* From location */}
+            <div className="group rounded-xl p-[1px] w-full sm:w-[200px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
+              <div className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
+                <MapPin className="h-4 w-4 text-[#9733EE]" />
+                <input
+                  name="fromLocation"
+                  value={form.fromLocation}
+                  onChange={onChange}
+                  placeholder="From (city)"
+                  className="w-full bg-transparent outline-none text-sm text-neutral-700 placeholder:text-neutral-500"
+                />
+              </div>
+            </div>
+
+            {/* From date */}
+            <div className="group rounded-xl p-[1px] w-full sm:w-[180px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
+              <div className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
+                <Calendar className="h-4 w-4 text-[#9733EE]" />
+                <input
+                  type="date"
+                  name="from"
+                  value={form.from}
+                  onChange={onChange}
+                  className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
+                />
+              </div>
+            </div>
+
+            {/* To date */}
+            <div className="group rounded-xl p-[1px] w-full sm:w-[180px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
+              <div className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
+                <Calendar className="h-4 w-4 text-[#9733EE]" />
+                <input
+                  type="date"
+                  name="to"
+                  value={form.to}
+                  onChange={onChange}
+                  className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
+                />
+              </div>
+            </div>
+
+            {/* Guests */}
+            <div className="group rounded-xl p-[1px] w-full sm:w-[140px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
+              <div className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
+                <Users className="h-4 w-4 text-[#9733EE]" />
+                <input
+                  type="number"
+                  min={1}
+                  name="guests"
+                  value={form.guests}
+                  onChange={onChange}
+                  placeholder="Guests"
+                  className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
+                />
+              </div>
+            </div>
+
+            {/* Budget */}
+            <div className="group rounded-xl p-[1px] w-full sm:w-[160px] focus-within:bg-gradient-to-r focus-within:from-[#DA22FF] focus-within:to-[#9733EE]">
+              <div className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 border border-neutral-400 transition-colors group-focus-within:border-transparent">
+                <DollarSign className="h-4 w-4 text-[#9733EE]" />
+                <input
+                  type="number"
+                  min={0}
+                  name="budget"
+                  value={form.budget}
+                  onChange={onChange}
+                  placeholder="Budget"
+                  className="bg-transparent outline-none text-sm w-full text-neutral-700 placeholder:text-neutral-500"
+                />
+              </div>
+            </div>
+
+            {/* Small button */}
+            <button
+              type="submit"
+              className={`cursor-pointer rounded-xl px-4 py-2 text-sm text-white hover:opacity-95 active:opacity-90 ${GRAD_BG}`}
+            >
+              Search
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* ================= VALUE PROPS ================= */}
+      <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <HeaderRow title="Why choose GoTour" />
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -229,7 +248,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============== FEATURED ============== */}
+      {/* ================= FEATURED ================= */}
       <Section title="Featured tours" action={{ to: "/tours", label: "View all" }}>
         <CardGrid
           items={[
@@ -260,7 +279,7 @@ export default function HomePage() {
         />
       </Section>
 
-      {/* ============== METRICS ============== */}
+      {/* ================= METRICS ================= */}
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-2xl border p-6 bg-white">
@@ -272,7 +291,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============== TESTIMONIALS ============== */}
+      {/* ================= TESTIMONIALS ================= */}
       <section className="py-10 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <HeaderRow title="What travelers say" />
@@ -292,7 +311,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============== FAQ ============== */}
+      {/* ================= FAQ ================= */}
       <section className="py-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <HeaderRow title="Frequently asked questions" />
@@ -310,7 +329,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ============== NEWSLETTER / CTA ============== */}
+      {/* ================= NEWSLETTER ================= */}
       <section className="py-12">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-2xl font-semibold">Get deals & travel tips</h3>
@@ -322,7 +341,7 @@ export default function HomePage() {
               placeholder="you@example.com"
               className="w-full sm:w-80 border rounded-lg px-3 py-2 outline-none"
             />
-            <button className={`px-4 py-2 rounded-lg text-white hover:opacity-95 active:opacity-90 ${GRAD_BG}`}>
+            <button className={`cursor-pointer px-4 py-2 rounded-lg text-white hover:opacity-95 active:opacity-90 ${GRAD_BG}`}>
               Subscribe
             </button>
           </form>
@@ -335,6 +354,7 @@ export default function HomePage() {
 /* ---------- tiny atoms ---------- */
 
 function HeaderRow({ title }) {
+  const GRAD_BG = `bg-gradient-to-r from-[#DA22FF] to-[#9733EE]`;
   return (
     <div className="mb-4 flex items-center justify-between">
       <h3 className="text-lg font-semibold">{title}</h3>
@@ -364,10 +384,10 @@ function Section({ title, action, children }) {
           {action && (
             <Link
               to={action.to}
-              className="text-sm text-neutral-700 inline-flex items-center gap-1 hover:opacity-90 cursor-pointer"
+              className="group text-sm text-neutral-700 inline-flex items-center gap-1 hover:opacity-90 cursor-pointer"
             >
               <span className={LINK_TEXT_HOVER}>{action.label}</span>
-              <ArrowRight className="h-4 w-4 text-[#9733EE]" />
+              <ArrowRight className="h-4 w-4 text-neutral-400 transition-colors group-hover:text-[#9733EE]" />
             </Link>
           )}
         </div>
@@ -399,9 +419,21 @@ function CardGrid({ items = [] }) {
 
 function Metric({ k, v }) {
   return (
-    <div className="rounded-xl border p-4 text-center">
+    <div className="rounded-2xl border p-4 text-center">
       <div className={`text-2xl font-semibold ${LINK_TEXT_HOVER}`}>{k}</div>
       <div className="text-xs text-neutral-500 mt-1">{v}</div>
+    </div>
+  );
+}
+
+function HeroStat({ label, value }) {
+  const GRAD_BG = `bg-gradient-to-r from-[#DA22FF] to-[#9733EE]`;
+  return (
+    <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
+      <div className="rounded-xl bg-white/90 backdrop-blur p-4 text-center">
+        <div className="text-xl font-semibold text-neutral-900">{value}</div>
+        <div className="mt-1 text-xs text-neutral-600">{label}</div>
+      </div>
     </div>
   );
 }
