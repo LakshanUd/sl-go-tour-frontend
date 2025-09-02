@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchBlogs, createBlog, updateBlog, deleteBlog } from "../lib/api.js";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import { confirmToast } from "../components/ConfirmToast"; // <-- same confirm box as VehiclePage
 
 export default function BlogsAdmin() {
   const [rows, setRows] = useState([]);
@@ -95,14 +96,27 @@ export default function BlogsAdmin() {
       await reload();
       closeModal();
     } catch (e) {
-      // errors already toasted in api layer (if you kept that)
+      // errors already handled/toasted in your api layer if you kept that behavior
     }
   };
 
-  const onDelete = async (id) => {
-    if (!confirm("Delete this blog?")) return;
-    await deleteBlog(id);
-    setRows((prev) => prev.filter((r) => r._id !== id));
+  // DELETE with the same custom confirmation box used in VehiclePage.jsx
+  const onDelete = async (id, title) => {
+    const ok = await confirmToast({
+      title: "Delete blog?",
+      message: `Delete “${title || "this blog"}”? This cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!ok) return;
+
+    try {
+      await deleteBlog(id);
+      toast.success("Blog deleted");
+      setRows((prev) => prev.filter((r) => r._id !== id));
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Delete failed");
+    }
   };
 
   const prettyRows = useMemo(() => {
@@ -208,7 +222,7 @@ export default function BlogsAdmin() {
                           Edit
                         </button>
                         <button
-                          onClick={() => onDelete(r._id)}
+                          onClick={() => onDelete(r._id, r.title)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-red-200 hover:bg-white shadow-sm text-red-600"
                           aria-label="Delete"
                           title="Delete"
