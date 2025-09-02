@@ -84,6 +84,9 @@ export default function AdminPage() {
                 <QuickLink to="/users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   Manage Users
                 </QuickLink>
+                <QuickLink to="/admin/manage-blogs" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  Manage Blogs
+                </QuickLink>
               </div>
             </section>
           </div>
