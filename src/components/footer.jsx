@@ -3,12 +3,14 @@ import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-neutral-950 text-neutral-300">
       <div className="w-full max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Brand Info */}
         <div>
-          <h2 className="text-2xl font-bold text-white">GoTour</h2>
-          <p className="mt-3 text-sm">
+          <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#DA22FF] to-[#9733EE]">
+            GoTour
+          </h2>
+          <p className="mt-3 text-sm text-neutral-400">
             Explore the world with our travel packages, vehicle rentals, and
             accommodation services. Your adventure starts here.
           </p>
@@ -19,19 +21,25 @@ const Footer = () => {
           <h3 className="text-lg font-semibold text-white">Quick Links</h3>
           <ul className="mt-3 space-y-2">
             <li>
-              <a href="/" className="hover:text-white transition-colors">
+              <a
+                href="/"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
+              >
                 Home
               </a>
             </li>
             <li>
-              <a href="/tours" className="hover:text-white transition-colors">
+              <a
+                href="/tours"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
+              >
                 Tours
               </a>
             </li>
             <li>
               <a
                 href="/vehicles"
-                className="hover:text-white transition-colors"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
               >
                 Vehicles
               </a>
@@ -39,13 +47,16 @@ const Footer = () => {
             <li>
               <a
                 href="/accommodation"
-                className="hover:text-white transition-colors"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
               >
                 Accommodation
               </a>
             </li>
             <li>
-              <a href="/blog" className="hover:text-white transition-colors">
+              <a
+                href="/blog"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
+              >
                 Blog
               </a>
             </li>
@@ -57,14 +68,17 @@ const Footer = () => {
           <h3 className="text-lg font-semibold text-white">Support</h3>
           <ul className="mt-3 space-y-2">
             <li>
-              <a href="/faq" className="hover:text-white transition-colors">
+              <a
+                href="/faq"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
+              >
                 FAQ
               </a>
             </li>
             <li>
               <a
                 href="/contact"
-                className="hover:text-white transition-colors"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
               >
                 Contact Us
               </a>
@@ -72,15 +86,15 @@ const Footer = () => {
             <li>
               <a
                 href="/terms"
-                className="hover:text-white transition-colors"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
               >
-                Terms & Conditions
+                Terms &amp; Conditions
               </a>
             </li>
             <li>
               <a
                 href="/privacy"
-                className="hover:text-white transition-colors"
+                className="transition-colors hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE]"
               >
                 Privacy Policy
               </a>
@@ -92,37 +106,36 @@ const Footer = () => {
         <div>
           <h3 className="text-lg font-semibold text-white">Follow Us</h3>
           <div className="mt-3 flex space-x-4">
-            <a
-              href="#"
-              className="p-2 rounded-full bg-gray-700 hover:bg-blue-600 transition-colors"
-            >
-              <Facebook size={18} />
-            </a>
-            <a
-              href="#"
-              className="p-2 rounded-full bg-gray-700 hover:bg-sky-500 transition-colors"
-            >
-              <Twitter size={18} />
-            </a>
-            <a
-              href="#"
-              className="p-2 rounded-full bg-gray-700 hover:bg-pink-500 transition-colors"
-            >
-              <Instagram size={18} />
-            </a>
-            <a
-              href="#"
-              className="p-2 rounded-full bg-gray-700 hover:bg-blue-500 transition-colors"
-            >
-              <Linkedin size={18} />
-            </a>
+            {[
+              { icon: <Facebook size={18} />, href: "#" },
+              { icon: <Twitter size={18} />, href: "#" },
+              { icon: <Instagram size={18} />, href: "#" },
+              { icon: <Linkedin size={18} />, href: "#" },
+            ].map((s, i) => (
+              <a
+                key={i}
+                href={s.href}
+                className="rounded-full p-[1px] bg-gradient-to-r from-[#DA22FF] to-[#9733EE]"
+              >
+                <span className="block p-2 rounded-full bg-neutral-800 text-neutral-300 transition-colors hover:bg-gradient-to-r hover:from-[#DA22FF] hover:to-[#9733EE] hover:text-white">
+                  {s.icon}
+                </span>
+              </a>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-gray-700 text-center py-4 text-sm text-gray-400">
-        © {new Date().getFullYear()} GoTour. All rights reserved.
+      <div className="px-6">
+        <div className="h-px w-full bg-gradient-to-r from-[#DA22FF] to-[#9733EE] opacity-70" />
+        <div className="text-center py-4 text-sm text-neutral-400">
+          © {new Date().getFullYear()}{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DA22FF] to-[#9733EE]">
+            GoTour
+          </span>
+          . All rights reserved.
+        </div>
       </div>
     </footer>
   );
