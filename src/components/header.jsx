@@ -83,9 +83,9 @@ export default function Header() {
 
           {/* Desktop actions */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Search (gradient border on focus; icon single-color) */}
-            <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
-              <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 w-44 border border-neutral-200 transition-colors group-focus-within:border-transparent">
+            {/* Search (SINGLE-COLOR active border; icon turns #9733EE) */}
+            <div className="group">
+              <div className="flex items-center gap-2 rounded-full bg-white px-3 py-1.5 w-44 border border-neutral-200 transition-colors focus-within:border-[#9733EE] focus-within:ring-2 focus-within:ring-[#9733EE]/20">
                 <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
                 <input
                   type="text"
@@ -96,17 +96,18 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Profile → Admin (gradient ring; active = gradient fill) */}
+            {/* Profile → Admin (more visible hover: ring + slight scale) */}
             <NavLink
               to="/admin"
               aria-label="Admin"
               title="Admin"
-              className={`rounded-full p-[1px] ${gradBG} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DA22FF]/60 focus-visible:ring-offset-2`}
+              className={`group rounded-full p-[1px] ${gradBG} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#DA22FF]/60 focus-visible:ring-offset-2 hover:ring-2 hover:ring-[#9733EE]/40 hover:ring-offset-2`}
             >
               {({ isActive }) => (
                 <span
                   className={[
-                    "h-9 w-9 inline-flex items-center justify-center rounded-full",
+                    "h-9 w-9 inline-flex items-center justify-center rounded-full transition",
+                    "group-hover:scale-105",
                     isActive ? `${gradBG} text-white` : "bg-white text-neutral-700 hover:bg-neutral-50",
                   ].join(" ")}
                 >
@@ -187,10 +188,10 @@ function MobileMenuPortal({ open, onClose, nav, gradBG }) {
               </button>
             </div>
 
-            {/* Search */}
+            {/* Search (MOBILE) — single-color active border; icon stays colored */}
             <div className="px-4 pt-3">
-              <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
-                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-full border border-neutral-200 transition-colors group-focus-within:border-transparent">
+              <div className="group">
+                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-full border border-neutral-200 transition-colors focus-within:border-[#9733EE] focus-within:ring-2 focus-within:ring-[#9733EE]/20">
                   <Search className="h-4 w-4 text-[#9733EE]" />
                   <input
                     type="text"
