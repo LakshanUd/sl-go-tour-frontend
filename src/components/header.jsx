@@ -35,7 +35,7 @@ export default function Header() {
     { name: "Tours", to: "/tours" },
     { name: "Vehicles", to: "vehicles" }, // keep your relative route
     { name: "Accommodation", to: "/accommodation" },
-    { name: "Blog", to: "/blog" },
+    { name: "Blog", to: "/blogs" },
   ];
 
   // gradient tokens
