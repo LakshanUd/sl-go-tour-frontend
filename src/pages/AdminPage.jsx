@@ -87,6 +87,9 @@ export default function AdminPage() {
                 <QuickLink to="/admin/manage-meals" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   Manage Meals
                 </QuickLink>
+                 <QuickLink to="/admin/manage-feedbacks" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  Manage Feedbacks
+                </QuickLink>
               </div>
             </section>
           </div>
