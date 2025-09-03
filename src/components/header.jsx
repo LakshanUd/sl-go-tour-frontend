@@ -60,11 +60,14 @@ export default function Header() {
   return (
     <header
       className={[
-        "sticky top-0 z-50 border-b",
+        "sticky top-0 z-50 border-b-2", // ← thicker bottom border (try -2 or -4)
         "bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/60",
-        scrolled ? "shadow-sm border-neutral-200" : "border-transparent",
+        scrolled ? "shadow-sm" : "",
+        "border-neutral-400",           // ← matte color (kept last so it overrides)
       ].join(" ")}
     >
+
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="h-22 flex items-center justify-between">
           {/* Logo */}
