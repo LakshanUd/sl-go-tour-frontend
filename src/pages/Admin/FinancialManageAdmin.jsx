@@ -1,4 +1,4 @@
-// src/pages/FinancialManageAdmin.jsx
+// src/pages/Admin/FinancialManageAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";

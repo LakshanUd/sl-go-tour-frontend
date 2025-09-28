@@ -1,4 +1,4 @@
-// src/pages/ManageUserAdmin.jsx
+// src/pages/Admin/ManageUserAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
@@ -25,14 +25,28 @@ import {
   Download,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
+  LayoutDashboard,
+  FileText,
+  BarChart3,
+  Bell,
+  Package,
+  CalendarDays,
+  Wallet,
 } from "lucide-react";
+import { NavLink, Link } from "react-router-dom";
+import { confirmToast } from "../../components/ConfirmToast";
 
-/* ---------- Theme ---------- */
-const GRAD_FROM = "from-[#DA22FF]";
-const GRAD_TO = "to-[#9733EE]";
+/* ---------- Theme (GREEN like VehiclePage) ---------- */
+const GRAD_FROM = "from-[#09E65A]";
+const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
-const ICON_COLOR = "text-[#9733EE]";
+const ICON_COLOR = "text-[#16A34A]";
 const CARD = "rounded-xl border border-neutral-200 bg-white shadow-sm";
+const gradText = `text-transparent bg-clip-text ${GRAD_BG}`;
+
+/* ---------- Persisted sidebar accordion ---------- */
+const LS_KEY = "adminSidebarOpen";
 
 /* ---------- Roles (model enum) ---------- */
 const ROLES = [
@@ -48,6 +62,7 @@ const ROLES = [
 ];
 
 const ROLES2 = [
+  "None",
   "Admin",
   "AC-Manager",
   "Author",
@@ -116,7 +131,7 @@ const EMPTY = {
   mobile: "",
   gender: "Other",
   password: "",
-  role: "Customer",
+  role: "",
 };
 function decodeJwtEmail() {
   try {
@@ -177,28 +192,53 @@ export default function ManageUserAdmin() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* left dashboard tabs */
+  /* NEW: Vehicle-style left sidebar accordion (persisted) */
+  const [open, setOpen] = useState({
+    overview: true,
+    content: true,
+    ops: true,
+    reports: true,
+    account: true,
+  });
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setOpen((s) => ({
+          overview: typeof parsed.overview === "boolean" ? parsed.overview : s.overview,
+          content: typeof parsed.content === "boolean" ? parsed.content : s.content,
+          ops: typeof parsed.ops === "boolean" ? parsed.ops : s.ops,
+          reports: typeof parsed.reports === "boolean" ? parsed.reports : s.reports,
+          account: typeof parsed.account === "boolean" ? parsed.account : s.account,
+        }));
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(open));
+    } catch {}
+  }, [open]);
+
+  /* main page state (kept) */
   const [tab, setTab] = useState("Overview"); // Overview | Activity | Settings | <role>
 
-  /* collapsible groups */
   const [grpMgmtOpen, setGrpMgmtOpen] = useState(true);
   const [grpServOpen, setGrpServOpen] = useState(true);
   const [grpCustOpen, setGrpCustOpen] = useState(true);
 
-  /* search + filters */
   const [q, setQ] = useState(localStorage.getItem("useradmin_q") || "");
   const [filterRole, setFilterRole] = useState(localStorage.getItem("useradmin_role") || "All");
   const [filterNationality, setFilterNationality] = useState(localStorage.getItem("useradmin_nat") || "All");
   const [filterGender, setFilterGender] = useState(localStorage.getItem("useradmin_gen") || "All");
   const [filterStatus, setFilterStatus] = useState(localStorage.getItem("useradmin_status") || "All");
 
-  /* create popup modal */
   const [openCreate, setOpenCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [showPw, setShowPw] = useState(false);
 
-  /* profile drawer */
   const [profile, setProfile] = useState(null);
 
   const myEmail = decodeJwtEmail();
@@ -227,7 +267,6 @@ export default function ManageUserAdmin() {
     localStorage.setItem("useradmin_status", filterStatus);
   }, [q, filterRole, filterNationality, filterGender, filterStatus]);
 
-  /* computed: counts, nationalities, etc. */
   const counts = useMemo(() => {
     const c = Object.fromEntries(ROLES.map((r) => [r, 0]));
     rows.forEach((u) => { const r = u.role || "Customer"; if (c[r] !== undefined) c[r] += 1; });
@@ -239,7 +278,6 @@ export default function ManageUserAdmin() {
     return ["All", ...Array.from(set).sort()];
   }, [rows]);
 
-  /* for overview metrics */
   const stats = useMemo(() => {
     const total = rows.length;
     const active = rows.filter((u) => (u.status || "active") === "active").length;
@@ -249,21 +287,17 @@ export default function ManageUserAdmin() {
     return { total, active, disabled, createdToday, createdThisWeek };
   }, [rows]);
 
-  /* filtering + search for table (applies on role tabs) */
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     let list = rows;
 
-    // left tab role quick filter
     if (ROLES.includes(tab)) list = list.filter((u) => (u.role || "Customer") === tab);
 
-    // top filters
     if (filterRole !== "All") list = list.filter((u) => (u.role || "Customer") === filterRole);
     if (filterNationality !== "All") list = list.filter((u) => (u.nationality || "") === filterNationality);
     if (filterGender !== "All") list = list.filter((u) => (u.gender || "") === filterGender);
     if (filterStatus !== "All") list = list.filter((u) => (u.status || "active") === filterStatus);
 
-    // search
     list = list.filter((u) => {
       if (!t) return true;
       const hay = [u.firstName, u.lastName, u.email, u.mobile, u.nationality, u.gender, u.role, u.status]
@@ -276,7 +310,6 @@ export default function ManageUserAdmin() {
     return list;
   }, [rows, q, filterRole, filterNationality, filterGender, filterStatus, tab]);
 
-  /* create flow (popup) */
   function openCreateModal() {
     setForm(EMPTY); setShowPw(false); setOpenCreate(true);
   }
@@ -293,7 +326,7 @@ export default function ManageUserAdmin() {
     if (!ROLES.includes(f.role)) return toast.error("Invalid role");
     try {
       setCreating(true);
-      await UsersAPI.create({
+      const payload = {
         firstName: f.firstName.trim(),
         lastName: f.lastName.trim(),
         nationality: f.nationality.trim(),
@@ -301,8 +334,29 @@ export default function ManageUserAdmin() {
         mobile: f.mobile.trim(),
         gender: f.gender,
         password: f.password,
-        role: f.role,
-      });
+        role: f.role, // send it anyway (backend might ignore)
+      };
+
+      const res = await UsersAPI.create(payload);
+      const created = res?.data?.user || res?.data || null;
+
+      // If backend ignored role, fix it using the dedicated endpoint
+      if (created?._id && created.role !== f.role) {
+        try {
+          const ok = await confirmToast({
+            title: "Set role after creation?",
+            message: `The API might ignore "role" on create.\nApply role: ${f.role} to ${created.email}?`,
+            confirmText: "Apply Role",
+            cancelText: "Skip",
+          });
+          if (ok) {
+            await UsersAPI.updateRole(created._id, f.role);
+          }
+        } catch (e) {
+          toast.error("Created user but failed to set role. Check permissions.");
+        }
+      }
+
       toast.success("User created");
       setOpenCreate(false);
       setTab(f.role);
@@ -312,14 +366,21 @@ export default function ManageUserAdmin() {
     } finally { setCreating(false); }
   }
 
-  /* inline role edit with confirmation */
+  // ====== UPDATED: use ConfirmToast for role change ======
   async function changeRoleInline(user, role) {
     if (user.email === myEmail) return toast.error("You cannot change your own role");
     if (role === "Customer") return toast.error("Cannot set role to Customer (customers are read-only)");
     const labelOld = ROLE_META[user.role]?.label || user.role;
     const labelNew = ROLE_META[role]?.label || role;
-    const ok = confirm(`Change role for ${user.email}\n\n${labelOld} → ${labelNew}\n\nProceed?`);
+
+    const ok = await confirmToast({
+      title: "Change Role",
+      message: `Change role for ${user.email}\n\n${labelOld} → ${labelNew}\n\nProceed?`,
+      confirmText: "Change",
+      cancelText: "Cancel",
+    });
     if (!ok) return;
+
     try {
       await UsersAPI.updateRole(user._id, role);
       toast.success("Role updated");
@@ -329,11 +390,19 @@ export default function ManageUserAdmin() {
     }
   }
 
-  /* delete */
+  // ====== UPDATED: use ConfirmToast for delete ======
   async function onDelete(user) {
     if (user.email === myEmail) return toast.error("You cannot delete your own account");
-    const ok = confirm(`Delete ${user.firstName || ""} ${user.lastName || ""} (${user.email})?`);
+
+    const name = `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email;
+    const ok = await confirmToast({
+      title: "Delete User",
+      message: `Are you sure you want to delete ${name} (${user.email})?\nThis cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
     if (!ok) return;
+
     try {
       await UsersAPI.remove(user._id);
       toast.success("User deleted");
@@ -343,11 +412,9 @@ export default function ManageUserAdmin() {
     }
   }
 
-  /* profile drawer (read-only quick view) */
   function openProfile(u) { setProfile(u); }
   function closeProfile() { setProfile(null); }
 
-  /* export */
   function exportCSV() {
     if (!filtered.length) return toast.error("Nothing to export");
     const csv = toCSV(filtered);
@@ -358,85 +425,186 @@ export default function ManageUserAdmin() {
     URL.revokeObjectURL(url);
   }
 
-  /* ------------ Render ------------ */
+  /* ------------ Render (with Vehicle-style sidebar) ------------ */
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+    <div className="min-h-screen bg-neutral-50 pt-24">
       <Toaster position="top-right" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Mini dashboard */}
-        <aside className="lg:col-span-1">
-          <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-            <section className="rounded-xl bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <Users className={`h-5 w-5 ${ICON_COLOR}`} />
-                User Dashboard
-              </h2>
-
-              {/* Nav */}
-              <div className="space-y-2">
-                <SideTab active={tab === "Overview"} icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Overview")}>
-                  Overview
-                </SideTab>
-                <SideTab active={tab === "Activity"} icon={<ListOrdered className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Activity")}>
-                  Activity Logs
-                </SideTab>
-                <SideTab active={tab === "Settings"} icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Settings")}>
-                  Settings
-                </SideTab>
-
-                {/* Grouped role tabs with collapse */}
-                <Group
-                  title="Management Roles"
-                  open={grpMgmtOpen}
-                  onToggle={() => setGrpMgmtOpen((v) => !v)}
-                >
-                  {MANAGEMENT_ROLES.map((r) => (
-                    <SideTab key={r} active={tab === r} icon={ROLE_META[r]?.icon} onClick={() => setTab(r)}>
-                      {(ROLE_META[r]?.label || r)} ({counts[r] ?? 0})
-                    </SideTab>
-                  ))}
-                </Group>
-
-                <Group
-                  title="Service Roles"
-                  open={grpServOpen}
-                  onToggle={() => setGrpServOpen((v) => !v)}
-                >
-                  {SERVICE_ROLES.map((r) => (
-                    <SideTab key={r} active={tab === r} icon={ROLE_META[r]?.icon} onClick={() => setTab(r)}>
-                      {(ROLE_META[r]?.label || r)} ({counts[r] ?? 0})
-                    </SideTab>
-                  ))}
-                </Group>
-
-                <Group
-                  title="Customers"
-                  open={grpCustOpen}
-                  onToggle={() => setGrpCustOpen((v) => !v)}
-                >
-                  <SideTab active={tab === "Customer"} icon={ROLE_META["Customer"]?.icon} onClick={() => setTab("Customer")}>
-                    Customer ({counts.Customer ?? 0})
-                  </SideTab>
-                </Group>
-
-                <div className="pt-3">
-                  <button
-                    type="button" /* ✅ ensure not submitting any form */
-                    onClick={openCreateModal}
-                    className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
-                  >
-                    <Plus size={16} />
-                    New User
-                  </button>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ===== Sidebar (VehiclePage-style) ===== */}
+        <aside className="lg:col-span-4 xl:col-span-3">
+          <div className="rounded-xl border border-neutral-200 bg-white">
+            {/* Overview */}
+            <AccordionHeader
+              title="Overview"
+              isOpen={open.overview}
+              onToggle={() => setOpen((s) => ({ ...s, overview: !s.overview }))}
+            />
+            {open.overview && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Analytics</span>
+                </RailLink>
               </div>
-            </section>
+            )}
+
+            {/* Content Management */}
+            <AccordionHeader
+              title="Content Management"
+              isOpen={open.content}
+              onToggle={() => setOpen((s) => ({ ...s, content: !s.content }))}
+            />
+            {open.content && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Tours</span>
+                </RailLink>
+                <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Blogs</span>
+                </RailLink>
+                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Meals</span>
+                </RailLink>
+                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Accommodations</span>
+                </RailLink>
+                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Vehicles</span>
+                </RailLink>
+                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>              
+                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Feedback</span>
+                </RailLink>
+                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* Operations Management */}
+            <AccordionHeader
+              title="Operations Management"
+              isOpen={open.ops}
+              onToggle={() => setOpen((s) => ({ ...s, ops: !s.ops }))}
+            />
+            {open.ops && (
+              <div className="px-3 pb-2">                
+                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Users</span>
+                </RailLink>
+                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Finance</span>
+                </RailLink>
+                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Bookings</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* Reports */}
+            <AccordionHeader
+              title="Reports"
+              isOpen={open.reports}
+              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
+            />
+            {open.reports && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">All Reports</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* Account Settings */}
+            <AccordionHeader
+              title="Account Settings"
+              isOpen={open.account}
+              onToggle={() => setOpen((s) => ({ ...s, account: !s.account }))}
+              last
+            />
+            {open.account && (
+              <div className="px-3 pb-3">
+                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Profile Settings</span>
+                </RailLink>
+              </div>
+            )}
           </div>
         </aside>
 
-        {/* RIGHT: Content */}
-        <main className="lg:col-span-2 space-y-6">
+        {/* ===== Main content (kept, now in right column) ===== */}
+        <main className="lg:col-span-8 xl:col-span-9 space-y-6">
+          {/* Header / Title row (moved here) */}
+          <div className="mb-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold leading-tight">
+                <span className={gradText}>Admin</span> · Users
+              </h2>
+              <p className="text-sm text-neutral-500">Manage users by role, export, and view activity.</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Search */}
+              <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
+                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
+                  <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
+                  <input
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
+                    placeholder="Search name / email / mobile…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* New user */}
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
+              >
+                <Plus size={16} />
+                New
+              </button>
+
+              <button onClick={exportCSV} className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50">
+                <Download className="h-4 w-4" /> Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Top tabs */}
+          <div className={`${CARD} p-3`}>
+            <div className="flex flex-wrap gap-2">
+              {/* Role quick tabs — row 1 */}
+              <div className="w-full flex flex-wrap gap-2 mt-2">
+                <TopTab active={tab === "Overview"} onClick={() => setTab("Overview")}>Overview</TopTab>
+                <TopTab active={tab === "Activity"} onClick={() => setTab("Activity")}>Activity Logs</TopTab>
+                <TopTab active={tab === "Settings"} onClick={() => setTab("Settings")}>Settings</TopTab>
+              </div>
+
+              {/* Role quick tabs — row 2 */}
+              <div className="w-full flex flex-wrap gap-2 mt-2">
+                {["Admin", "Author", "Chef", "Customer"].map((r) => (
+                  <TopTab key={r} active={tab === r} onClick={() => setTab(r)}>
+                    {(ROLE_META[r]?.label || r)} ({counts[r] ?? 0})
+                  </TopTab>
+                ))}
+              </div>
+
+              {/* Role quick tabs — row 3 (Managers) */}
+              <div className="w-full flex flex-wrap gap-2 mt-2">
+                {["AC-Manager", "CF-Manager", "IN-Manager", "TP-Manager", "VC-Manager"].map((r) => (
+                  <TopTab key={r} active={tab === r} onClick={() => setTab(r)}>
+                    {(ROLE_META[r]?.label || r)} ({counts[r] ?? 0})
+                  </TopTab>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Overview */}
           {tab === "Overview" && (
             <>
@@ -518,30 +686,13 @@ export default function ManageUserAdmin() {
           {/* Role lists */}
           {tab !== "Overview" && tab !== "Activity" && tab !== "Settings" && (
             <>
-              {/* Controls */}
+              {/* Filters */}
               <div className={`${CARD} p-3`}>
                 <div className="flex flex-wrap gap-2 items-center">
-                  <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
-                    <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
-                      <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
-                      <input
-                        className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
-                        placeholder="Search name / email / mobile…"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 ml-auto">
-                    <FilterChip label="Role" value={filterRole} onChange={setFilterRole} options={["All", ...ROLES]} />
-                    <FilterChip label="Nationality" value={filterNationality} onChange={setFilterNationality} options={nationalities} />
-                    <FilterChip label="Gender" value={filterGender} onChange={setFilterGender} options={["All", ...GENDERS]} />
-                    <FilterChip label="Status" value={filterStatus} onChange={setFilterStatus} options={["All", ...STATUSES]} />
-                    <button onClick={exportCSV} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-neutral-50">
-                      <Download className="h-4 w-4" /> Export CSV
-                    </button>
-                  </div>
+                  <FilterChip label="Role" value={filterRole} onChange={setFilterRole} options={["All", ...ROLES]} />
+                  <FilterChip label="Nationality" value={filterNationality} onChange={setFilterNationality} options={nationalities} />
+                  <FilterChip label="Gender" value={filterGender} onChange={setFilterGender} options={["All", ...GENDERS]} />
+                  <FilterChip label="Status" value={filterStatus} onChange={setFilterStatus} options={["All", ...STATUSES]} />
                 </div>
               </div>
 
@@ -593,7 +744,7 @@ export default function ManageUserAdmin() {
                               <td className="p-3">
                                 {canEditRole ? (
                                   <select
-                                    className="rounded-lg border px-2 py-1.5 text-sm"
+                                    className="rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                                     value={u.role}
                                     onChange={(e) => changeRoleInline(u, e.target.value)}
                                   >
@@ -770,37 +921,70 @@ export default function ManageUserAdmin() {
   );
 }
 
-/* ---------- small UI bits ---------- */
-
-function Group({ title, open, onToggle, children }) {
+/* ---------- Vehicle-style sidebar bits ---------- */
+function AccordionHeader({ title, isOpen, onToggle, last = false }) {
   return (
-    <div className="pt-3">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between text-xs uppercase tracking-wide text-neutral-500"
-      >
-        <span>{title}</span>
-        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-      </button>
-      {open && <div className="mt-1 space-y-2">{children}</div>}
-    </div>
+    <button
+      onClick={onToggle}
+      className={[
+        "w-full flex items-center justify-between px-3 py-2 text-left text-xs font-medium uppercase tracking-wide",
+        "cursor-pointer",
+        last ? "" : "border-b border-neutral-200",
+      ].join(" ")}
+    >
+      <span className="text-neutral-500">{title}</span>
+      <ChevronUp
+        className={[
+          "h-4 w-4 transition-transform text-neutral-500",
+          isOpen ? "rotate-0" : "rotate-180",
+        ].join(" ")}
+      />
+    </button>
   );
 }
-function SideTab({ active, icon, onClick, children }) {
+function RailLink({ to, icon, children }) {
+  return (
+    <NavLink to={to} className="block group">
+      {({ isActive }) => (
+        <div
+          className={[
+            "rounded-lg p-[1px] my-1",
+            isActive
+              ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A]"
+              : "bg-gradient-to-r from-transparent to-transparent group-hover:from-[#09E65A1A] group-hover:to-[#16A34A1A]",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm transition",
+              "hover:bg-neutral-50",
+              isActive ? "shadow-sm" : "",
+            ].join(" ")}
+          >
+            <span className="inline-flex items-center gap-2 text-neutral-800 overflow-hidden">
+              {icon}
+              <span className="whitespace-nowrap">{children}</span>
+            </span>
+            <ChevronRight className={`h-4 w-4 ${ICON_COLOR}`} />
+          </span>
+        </div>
+      )}
+    </NavLink>
+  );
+}
+
+/* ---------- small UI bits (green focus) ---------- */
+function TopTab({ active, onClick, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        "w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition border",
+        "rounded-lg px-3 py-1.5 text-sm border",
         active ? "bg-white shadow-sm border-transparent" : "bg-white hover:bg-neutral-50 border-neutral-200",
       ].join(" ")}
     >
-      <span className="inline-flex items-center gap-2 text-neutral-800">
-        <span>{icon}</span>
-        {children}
-      </span>
+      {children}
     </button>
   );
 }
@@ -829,7 +1013,11 @@ function FilterChip({ label, value, onChange, options }) {
   return (
     <label className="inline-flex items-center gap-2 text-sm">
       <span className="text-neutral-600 inline-flex items-center gap-1"><Filter className="h-4 w-4" /> {label}</span>
-      <select className="rounded-lg border px-2 py-1.5 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select
+        className="rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
         {options.map((o) => (
           <option key={o} value={o}>
             {o}
@@ -865,7 +1053,7 @@ function Input(props) {
       className={[
         "w-full rounded-xl border border-neutral-200 px-3 py-2",
         "placeholder:text-neutral-400 text-neutral-800",
-        "focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40",
+        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
       ].join(" ")}
     />
   );
@@ -878,7 +1066,7 @@ function Select({ value, onChange, options = [] }) {
       className={[
         "w-full rounded-xl border border-neutral-200 px-3 py-2",
         "text-neutral-800 bg-white",
-        "focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40",
+        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
       ].join(" ")}
     >
       {options.map((op) => (
@@ -906,19 +1094,22 @@ function PasswordStrength({ value }) {
 }
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      {/* Content */}
+
+      {/* Frame */}
       <div
         className={`relative z-[1001] w-full max-w-3xl rounded-2xl p-[1px] ${GRAD_BG} shadow-2xl`}
-        onClick={(e) => e.stopPropagation()}  /* ✅ don't let clicks bubble to backdrop */
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="rounded-2xl bg-white">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200">
+        {/* Card (scroll container) */}
+        <div className="rounded-2xl bg-white max-h-[85vh] flex flex-col">
+          {/* Sticky header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 sticky top-0 bg-white z-10">
             <div className="font-semibold">{title}</div>
             <button
-              type="button" /* ✅ no accidental submit */
+              type="button"
               onClick={onClose}
               className="p-2 rounded-md hover:bg-neutral-100"
               aria-label="Close"
@@ -926,12 +1117,17 @@ function Modal({ title, onClose, children }) {
               <X className="h-5 w-5 text-neutral-700" />
             </button>
           </div>
-          <div className="p-5">{children}</div>
+
+          {/* Scrollable body */}
+          <div className="p-5 overflow-y-auto overscroll-contain">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 function SlideOver({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-[1000]">
@@ -962,7 +1158,7 @@ function RoleBarChart({ counts }) {
         <div key={d.name} className="flex items-center gap-2">
           <div className="w-28 text-xs text-neutral-600">{d.name}</div>
           <div className="flex-1 h-3 bg-neutral-100 rounded">
-            <div className="h-3 rounded" style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#DA22FF,#9733EE)" }} />
+            <div className="h-3 rounded" style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#09E65A,#16A34A)" }} />
           </div>
           <div className="w-8 text-right text-xs text-neutral-700">{d.value}</div>
         </div>
@@ -976,15 +1172,27 @@ function NationalityBars({ rows }) {
     const n = u.nationality || "Unknown";
     map.set(n, (map.get(n) || 0) + 1);
   });
-  const arr = Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const arr = Array.from(map.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
   const max = Math.max(1, ...arr.map(([, v]) => v));
+
   return (
     <div className="space-y-2">
       {arr.map(([n, v]) => (
         <div key={n} className="flex items-center gap-2">
-          <div className="w-28 text-xs text-neutral-600 truncate" title={n}>{n}</div>
+          <div className="w-28 text-xs text-neutral-600 truncate" title={n}>
+            {n}
+          </div>
           <div className="flex-1 h-3 bg-neutral-100 rounded">
-            <div className="h-3 rounded" style={{ width: `${(v / max) * 100}%`, background: "linear-gradient(90deg,#DA22FF,#9733EE)" }} />
+            <div
+              className="h-3 rounded"
+              style={{
+                width: `${(v / max) * 100}%`,
+                background: "linear-gradient(90deg,#09E65A,#16A34A)"
+              }}
+            />
           </div>
           <div className="w-8 text-right text-xs text-neutral-700">{v}</div>
         </div>

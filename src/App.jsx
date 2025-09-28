@@ -19,18 +19,18 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 
 // Admin tools (manager UIs)
-import VehiclePage from "./pages/VehiclePage.jsx";
-import AdminMeals from "./pages/AdminMeals.jsx";
-import BlogsAdmin from "./pages/BlogsAdmin.jsx";
-import AccommodationAdmin from "./pages/AccommodationAdmin.jsx";
-import ManageUserAdmin from "./pages/ManageUserAdmin.jsx";
-import ManageComplaintAdmin from "./pages/ManageComplaintAdmin.jsx";
-import ManageFeedbackAdmin from "./pages/ManageFeedbackAdmin.jsx";
-import BookingManageAdmin from "./pages/BookingManageAdmin.jsx";
-import FinancialManageAdmin from "./pages/FinancialManageAdmin.jsx";
+import VehiclePage from "./pages/Admin/VehiclePage.jsx";
+import AdminMeals from "./pages/Admin/AdminMeals.jsx";
+import BlogsAdmin from "./pages/Admin/BlogsAdmin.jsx";
+import AccommodationAdmin from "./pages/Admin/AccommodationAdmin.jsx";
+import ManageUserAdmin from "./pages/Admin/ManageUserAdmin.jsx";
+import ManageComplaintAdmin from "./pages/Admin/ManageComplaintAdmin.jsx";
+import ManageFeedbackAdmin from "./pages/Admin/ManageFeedbackAdmin.jsx";
+import BookingManageAdmin from "./pages/Admin/BookingManageAdmin.jsx";
+import FinancialManageAdmin from "./pages/Admin/FinancialManageAdmin.jsx";
 import MonthlyReport from "./pages/MonthlyReport.jsx";
 import FinanceTransactionsReport from "./pages/reports/FinanceTransactionsReport.jsx";
-import ManageInventoryAdmin from "./pages/ManageInventoryAdmin.jsx";
+import ManageInventoryAdmin from "./pages/Admin/ManageInventoryAdmin.jsx";
 
 // Customers
 import CustomerPage from "./pages/CustomerPage.jsx";
@@ -43,7 +43,7 @@ import CustomerFeedback from "./pages/CustomerFeedback.jsx";
 import FeedbackPublic from "./pages/FeedbackPublic.jsx";
 
 // Tours
-import TourPackageListAdmin from "./pages/TourPackageListAdmin.jsx";
+import TourPackageListAdmin from "./pages/Admin/TourPackageListAdmin.jsx";
 import TourPackageView from "./pages/TourPackageView.jsx";
 import TourPackageEditor from "./pages/TourPackageEditor.jsx";
 
@@ -146,7 +146,8 @@ function App() {
         />
 
         {/* ---------- Admin landing (redirects by role) ---------- */}
-        <Route path="/admin/*" element={<AdminPage />} />
+        <Route path="/admin/*" element={<AdminDashboard />} />
+         <Route path="/admin/overview" element={<AdminDashboard />} />
 
         {/* ---------- Admin tools (PROTECTED) ---------- */}
         <Route
@@ -227,72 +228,6 @@ function App() {
           element={
             <RoleRoute roles={["Admin"]}>
               <FinancialManageAdmin />
-            </RoleRoute>
-          }
-        />
-
-        {/* ---------- Dashboards (role entry points) ---------- */}
-        <Route
-          path="/dash/admin"
-          element={
-            <RoleRoute roles={["Admin"]}>
-              <AdminDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/vehicles"
-          element={
-            <RoleRoute roles={["VC-Manager"]}>
-              <VehicleManagerDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/accommodations"
-          element={
-            <RoleRoute roles={["AC-Manager"]}>
-              <AccommodationManagerDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/author"
-          element={
-            <RoleRoute roles={["Author"]}>
-              <AuthorDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/complaints-feedback"
-          element={
-            <RoleRoute roles={["CF-Manager"]}>
-              <ComplaintFeedbackManagerDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/inventory"
-          element={
-            <RoleRoute roles={["IN-Manager"]}>
-              <InventoryManagerDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/chef"
-          element={
-            <RoleRoute roles={["Chef"]}>
-              <ChefDashboard />
-            </RoleRoute>
-          }
-        />
-        <Route
-          path="/dash/tours"
-          element={
-            <RoleRoute roles={["TP-Manager"]}>
-              <TourPackageManagerDashboard />
             </RoleRoute>
           }
         />

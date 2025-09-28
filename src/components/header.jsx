@@ -1,11 +1,10 @@
 // src/components/Header.jsx
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Menu,
   X,
-  Search,
   User,
   LogIn,
   LogOut,
@@ -38,21 +37,21 @@ api.interceptors.request.use((config) => {
 function getDashboardPath(role) {
   switch (role) {
     case "Admin":
-      return "/dash/admin";
+      return "/admin/overview";
     case "VC-Manager":
-      return "/dash/vehicles";
+      return "/vehicles";
     case "AC-Manager":
-      return "/dash/accommodations";
+      return "/accommodations";
     case "Author":
-      return "/dash/author";
+      return "/author";
     case "CF-Manager":
-      return "/dash/complaints-feedback";
+      return "/complaints-feedback";
     case "IN-Manager":
-      return "/dash/inventory";
+      return "/inventory";
     case "Chef":
-      return "/dash/chef";
+      return "/chef";
     case "TP-Manager":
-      return "/dash/tours";
+      return "/tours";
     case "Customer":
     default:
       return "/customer";
@@ -65,12 +64,14 @@ export default function Header() {
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [cartCount, setCartCount] = useState(0);
-  const navigate = useNavigate();
 
-  // Detect admin/customer/dash paths to invert user icon pill
-  const path = window.location.pathname;
-  const isInDashboard = ["/admin", "/customer", "/dash/"].some((p) =>
-    path.startsWith(p)
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  // route-aware flags
+  const isHome = pathname === "/";
+  const isInDashboard = ["/admin", "/customer"].some((p) =>
+    pathname.startsWith(p)
   );
 
   /* Lock body scroll for sheet */
@@ -99,6 +100,9 @@ export default function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Use "light" only when on Home AND not scrolled.
+  const light = isHome && !scrolled;
 
   /* Auth from JWT (client-side decode) */
   useEffect(() => {
@@ -206,23 +210,22 @@ export default function Header() {
   const linkClass = ({ isActive }) =>
     [
       "relative font-medium transition-colors px-2 py-1 rounded-lg",
-      scrolled
+      light
         ? isActive
-          ? "relative text-neutral-900 after:content-[''] after:absolute after:left-2 after:right-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-neutral-900"
-          : "text-neutral-700 hover:text-neutral-900"
+          ? "text-white after:content-[''] after:absolute after:left-2 after:right-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-white"
+          : "text-white/90 hover:text-white"
         : isActive
-        ? "text-white after:content-[''] after:absolute after:left-2 after:right-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-white"
-        : "text-white/90 hover:text-white",
+        ? "relative text-neutral-900 after:content-[''] after:absolute after:left-2 after:right-2 after:-bottom-1 after:h-0.5 after:rounded-full after:bg-neutral-900"
+        : "text-neutral-700 hover:text-neutral-900",
     ].join(" ");
 
   return (
     <header
       className={[
-        // Transparent overlay initially; glassmorphism on scroll
         "fixed top-0 left-0 right-0 z-50 transition-colors pt-[20px] pb-[10px]",
-        scrolled
-          ? "bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55 border-b border-white/20 shadow-sm"
-          : "bg-transparent",
+        light
+          ? "bg-transparent"
+          : "bg-white/70 backdrop-blur-md supports-[backdrop-filter]:bg-white/55 border-b border-white/20 shadow-sm",
       ].join(" ")}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -230,13 +233,11 @@ export default function Header() {
           {/* Left: Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <img
-              src={scrolled ? "/mainlogo.svg" : "/mainlogo2.svg"}
+              src={light ? "/mainlogo2.svg" : "/mainlogo.svg"}
               alt="GoTour"
               className="h-15 w-auto transition-opacity duration-200"
               style={
-                !scrolled
-                  ? { filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }
-                  : undefined
+                light ? { filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" } : undefined
               }
             />
           </Link>
@@ -260,22 +261,18 @@ export default function Header() {
                   to="/cart"
                   className={[
                     "relative inline-flex items-center justify-center h-9 w-9 rounded-full border",
-                    scrolled
-                      ? "border-neutral-200 bg-white hover:bg-neutral-50"
-                      : "border-white/50 bg-white/10 hover:bg-white/15 backdrop-blur-md",
+                    light
+                      ? "border-white/50 bg-white/10 hover:bg-white/15 backdrop-blur-md"
+                      : "border-neutral-200 bg-white hover:bg-neutral-50",
                   ].join(" ")}
                   aria-label="Open cart"
                   title="Cart"
                 >
                   <ShoppingCart
-                    className={
-                      scrolled
-                        ? "h-4 w-4 text-neutral-700"
-                        : "h-4 w-4 text-white"
-                    }
+                    className={light ? "h-4 w-4 text-white" : "h-4 w-4 text-neutral-700"}
                   />
                   {cartCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-semibold text-white grid place-items-center bg-rose-600">
+                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-semibold text-white grid place-items-center bg-green-600">
                       {cartCount > 99 ? "99+" : cartCount}
                     </span>
                   )}
@@ -288,9 +285,7 @@ export default function Header() {
                   onClick={() => setShowUserMenu((v) => !v)}
                   className={[
                     "rounded-full p-[2px] cursor-pointer focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2",
-                    scrolled
-                      ? "focus-visible:ring-neutral-300 focus-visible:ring-offset-white"
-                      : "focus-visible:ring-white/50",
+                    light ? "" : "focus-visible:ring-neutral-300 focus-visible:ring-offset-white",
                   ].join(" ")}
                   aria-label="User menu"
                   aria-expanded={showUserMenu}
@@ -298,9 +293,9 @@ export default function Header() {
                   <span
                     className={[
                       "h-9 w-9 inline-flex items-center justify-center rounded-full transition border",
-                      scrolled
-                        ? "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-200"
-                        : "bg-white/10 text-white hover:bg-white/15 border-white/40 backdrop-blur-md",
+                      light
+                        ? "bg-white/10 text-white hover:bg-white/15 border-white/40 backdrop-blur-md"
+                        : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-200",
                       user && isInDashboard
                         ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A] text-white border-transparent"
                         : "",
@@ -312,7 +307,7 @@ export default function Header() {
                           user.email?.charAt(0)?.toUpperCase()}
                       </span>
                     ) : (
-                      <User className="h-4 w-4" />
+                      <User className={light ? "h-4 w-4 text-white" : "h-4 w-4"} />
                     )}
                   </span>
                 </button>
@@ -326,9 +321,7 @@ export default function Header() {
                           <p className="text-sm font-semibold text-neutral-900">
                             {user.firstName} {user.lastName}
                           </p>
-                          <p className="text-xs text-neutral-500">
-                            {user.email}
-                          </p>
+                          <p className="text-xs text-neutral-500">{user.email}</p>
                           <p className="text-[11px] text-[#16A34A] font-medium">
                             {user.role}
                           </p>
@@ -383,9 +376,7 @@ export default function Header() {
               type="button"
               className={[
                 "md:hidden p-2 rounded-lg transition",
-                scrolled
-                  ? "hover:bg-neutral-100 text-neutral-700"
-                  : "hover:bg-white/10 text-white backdrop-blur-md",
+                light ? "hover:bg-white/10 text-white backdrop-blur-md" : "hover:bg-neutral-100 text-neutral-700",
               ].join(" ")}
               aria-label="Toggle menu"
               aria-expanded={mobileOpen}
@@ -424,7 +415,6 @@ function MobileMenuPortal({
   handleLogout,
   cartCount,
   handleGoDashboard,
-  scrolled,
 }) {
   // Create (or reuse) a container under <body>
   const portalTarget = useMemo(() => {

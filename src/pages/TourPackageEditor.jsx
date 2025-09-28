@@ -157,7 +157,7 @@ export default function TourPackageEditor({ mode = "create" }) {
 
       // 2) If a new file selected, upload FIRST (same flow as VehiclePage)
       if (file) {
-        const url = await MediaUpload(file); // returns public URL
+        const url = await MediaUpload(file, { bucket: "images", prefix: "tours" });
         imageUrls = [url, ...imageUrls];     // newest first
       }
 

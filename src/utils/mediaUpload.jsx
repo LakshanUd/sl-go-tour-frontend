@@ -11,7 +11,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   },
 });
 
-export default async function mediaUpload(file, { bucket = "images", prefix = "vehicles" } = {}) {
+export default async function mediaUpload(file, { bucket = "images", prefix = "other" } = {}) {
   if (!file) throw new Error("No file selected");
   const key = `${prefix}/${Date.now()}-${file.name}`;
 

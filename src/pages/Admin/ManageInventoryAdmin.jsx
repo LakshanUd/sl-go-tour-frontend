@@ -1,4 +1,4 @@
-// src/pages/ManageInventoryAdmin.jsx
+// src/pages/Admin/ManageInventoryAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
@@ -12,23 +12,33 @@ import {
   Download,
   ChevronRight,
   ListOrdered,
-  Settings,
-  BadgeDollarSign,
-  ClipboardList,
+  Settings as SettingsIcon,
   Layers3,
-  Warehouse,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
+  ClipboardList,
   Pencil,
+  LayoutDashboard,
+  Users,
+  Wallet,
+  CalendarDays,
+  FileText,
+  BarChart3,
+  Bell,
+  Package,
+  Settings,
 } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { confirmToast } from "../../components/ConfirmToast";
 
-/* ---------- Theme (match ManageUserAdmin) ---------- */
-const GRAD_FROM = "from-[#DA22FF]";
-const GRAD_TO = "to-[#9733EE]";
+/* ---------- Theme (GREEN like ManageUserAdmin) ---------- */
+const GRAD_FROM = "from-[#09E65A]";
+const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
-const ICON_COLOR = "text-[#9733EE]";
+const ICON_COLOR = "text-[#16A34A]";
 const CARD = "rounded-xl border border-neutral-200 bg-white shadow-sm";
+const gradText = `text-transparent bg-clip-text ${GRAD_BG}`;
+
+/* ---------- Persisted sidebar accordion ---------- */
+const LS_KEY = "adminSidebarOpen";
 
 /* ---------- Enums ---------- */
 const TYPE_OPTS = ["RECEIVE", "ISSUE", "ADJUSTMENT", "TRANSFER"];
@@ -69,7 +79,7 @@ const InvAPI = {
 
 /* ---------- helpers ---------- */
 const EMPTY = {
-  item: "",              // ObjectId string
+  item: "", // ObjectId string
   type: "RECEIVE",
   quantity: "",
   unitCost: "",
@@ -77,8 +87,8 @@ const EMPTY = {
   category: "General",
   description: "",
   location: "Main Warehouse",
-  purchaseDate: "",      // yyyy-mm-dd
-  expiryDate: "",        // yyyy-mm-dd
+  purchaseDate: "", // yyyy-mm-dd
+  expiryDate: "", // yyyy-mm-dd
   status: "in_stock",
 };
 
@@ -104,8 +114,17 @@ function toISODateInput(d) {
 }
 function toCSV(rows) {
   const cols = [
-    "inventoryID","name","category","type","quantity","unitCost","status",
-    "location","purchaseDate","expiryDate","createdAt"
+    "inventoryID",
+    "name",
+    "category",
+    "type",
+    "quantity",
+    "unitCost",
+    "status",
+    "location",
+    "purchaseDate",
+    "expiryDate",
+    "createdAt",
   ];
   const header = cols.join(",");
   const lines = rows.map((r) =>
@@ -127,7 +146,36 @@ export default function ManageInventoryAdmin() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  /* left dashboard tabs */
+  /* Vehicle-style left sidebar accordion (persisted) */
+  const [open, setOpen] = useState({
+    overview: true,
+    content: true,
+    ops: true,
+    reports: true,
+    account: true,
+  });
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setOpen((s) => ({
+          overview: typeof parsed.overview === "boolean" ? parsed.overview : s.overview,
+          content: typeof parsed.content === "boolean" ? parsed.content : s.content,
+          ops: typeof parsed.ops === "boolean" ? parsed.ops : s.ops,
+          reports: typeof parsed.reports === "boolean" ? parsed.reports : s.reports,
+          account: typeof parsed.account === "boolean" ? parsed.account : s.account,
+        }));
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(open));
+    } catch {}
+  }, [open]);
+
+  /* main page state */
   const [tab, setTab] = useState("Overview"); // Overview | Activity | Settings | Lists
 
   /* search + filters */
@@ -159,7 +207,9 @@ export default function ManageInventoryAdmin() {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("inv_q", q);
@@ -196,8 +246,15 @@ export default function ManageInventoryAdmin() {
     if (t) {
       list = list.filter((r) => {
         const hay = [
-          r.inventoryID, r.name, r.category, r.description, r.location, r.type, r.status,
-          String(r.quantity), String(r.unitCost)
+          r.inventoryID,
+          r.name,
+          r.category,
+          r.description,
+          r.location,
+          r.type,
+          r.status,
+          String(r.quantity),
+          String(r.unitCost),
         ]
           .filter(Boolean)
           .join(" ")
@@ -310,10 +367,18 @@ export default function ManageInventoryAdmin() {
     }
   }
 
-  /* delete */
+  /* delete (UPDATED: confirmToast like ManageUser) */
   async function onDelete(row) {
-    const ok = confirm(`Delete record ${row.inventoryID || row._id}? This cannot be undone.`);
+    const label = `${row.name || "record"} (${row.inventoryID || row._id})`;
+    const ok = await confirmToast({
+      title: "Delete Inventory Record",
+      message: `Are you sure you want to delete ${label}?\nThis cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      position: "top-right",
+    });
     if (!ok) return;
+
     try {
       await InvAPI.remove(row._id);
       toast.success("Deleted");
@@ -337,53 +402,176 @@ export default function ManageInventoryAdmin() {
     URL.revokeObjectURL(url);
   }
 
-  /* ------------ Render ------------ */
+  /* ------------ Render (vehicle-style layout) ------------ */
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+    <div className="min-h-screen bg-neutral-50 pt-24">
       <Toaster position="top-right" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Mini dashboard */}
-        <aside className="lg:col-span-1">
-          <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-            <section className="rounded-xl bg-white p-4 shadow-sm">
-              <h2 className="text-sm font-medium text-neutral-700 mb-3 flex items-center gap-2">
-                <Boxes className={`h-5 w-5 ${ICON_COLOR}`} />
-                Inventory Dashboard
-              </h2>
-
-              {/* Nav */}
-              <div className="space-y-2">
-                <SideTab active={tab === "Overview"} icon={<ClipboardList className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Overview")}>
-                  Overview
-                </SideTab>
-                <SideTab active={tab === "Activity"} icon={<ListOrdered className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Activity")}>
-                  Activity Logs
-                </SideTab>
-                <SideTab active={tab === "Settings"} icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Settings")}>
-                  Settings
-                </SideTab>
-                <SideTab active={tab === "Lists"} icon={<Layers3 className={`h-4 w-4 ${ICON_COLOR}`} />} onClick={() => setTab("Lists")}>
-                  Lists
-                </SideTab>
-
-                <div className="pt-3">
-                  <button
-                    type="button"
-                    onClick={openCreateModal}
-                    className={`w-full inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
-                  >
-                    <Plus size={16} />
-                    New Record
-                  </button>
-                </div>
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ===== Sidebar (VehiclePage-style) ===== */}
+        <aside className="lg:col-span-4 xl:col-span-3">
+          <div className="rounded-xl border border-neutral-200 bg-white">
+            {/* Overview */}
+            <AccordionHeader
+              title="Overview"
+              isOpen={open.overview}
+              onToggle={() => setOpen((s) => ({ ...s, overview: !s.overview }))}
+            />
+            {open.overview && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Analytics</span>
+                </RailLink>
               </div>
-            </section>
+            )}
+
+            {/* Content Management */}
+            <AccordionHeader
+              title="Content Management"
+              isOpen={open.content}
+              onToggle={() => setOpen((s) => ({ ...s, content: !s.content }))}
+            />
+            {open.content && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Tours</span>
+                </RailLink>
+                <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Blogs</span>
+                </RailLink>
+                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Meals</span>
+                </RailLink>
+                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Accommodations</span>
+                </RailLink>
+                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Vehicles</span>
+                </RailLink>
+                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>
+                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Feedback</span>
+                </RailLink>
+                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* Operations Management */}
+            <AccordionHeader
+              title="Operations Management"
+              isOpen={open.ops}
+              onToggle={() => setOpen((s) => ({ ...s, ops: !s.ops }))}
+            />
+            {open.ops && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Users</span>
+                </RailLink>
+                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Finance</span>
+                </RailLink>
+                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Bookings</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* Reports */}
+            <AccordionHeader
+              title="Reports"
+              isOpen={open.reports}
+              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
+            />
+            {open.reports && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">All Reports</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* Account Settings */}
+            <AccordionHeader
+              title="Account Settings"
+              isOpen={open.account}
+              onToggle={() => setOpen((s) => ({ ...s, account: !s.account }))}
+              last
+            />
+            {open.account && (
+              <div className="px-3 pb-3">
+                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Profile Settings</span>
+                </RailLink>
+              </div>
+            )}
           </div>
         </aside>
 
-        {/* RIGHT: Content */}
-        <main className="lg:col-span-2 space-y-6">
+        {/* ===== Main content (right column) ===== */}
+        <main className="lg:col-span-8 xl:col-span-9 space-y-6">
+          {/* Header / Title row */}
+          <div className="mb-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold leading-tight">
+                <span className={gradText}>Admin</span> · Inventory
+              </h2>
+              <p className="text-sm text-neutral-500">Track stock movements, adjust status, and export data.</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Search */}
+              <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
+                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
+                  <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
+                  <input
+                    className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
+                    placeholder="Search ID / name / category / location…"
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
+              >
+                <Plus size={16} />
+                New
+              </button>
+
+              <button
+                onClick={exportCSV}
+                className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+              >
+                <Download className="h-4 w-4" /> Export CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Top tabs (Overview / Activity / Settings / Lists) */}
+          <div className={`${CARD} p-3`}>
+            <div className="flex flex-wrap gap-2">
+              <TopTab active={tab === "Overview"} onClick={() => setTab("Overview")}>
+                Overview
+              </TopTab>
+              <TopTab active={tab === "Lists"} onClick={() => setTab("Lists")}>
+                Lists
+              </TopTab>
+              <TopTab active={tab === "Activity"} onClick={() => setTab("Activity")}>
+                Activity Logs
+              </TopTab>
+              <TopTab active={tab === "Settings"} onClick={() => setTab("Settings")}>
+                Settings
+              </TopTab>
+            </div>
+          </div>
+
           {/* Overview */}
           {tab === "Overview" && (
             <>
@@ -439,7 +627,7 @@ export default function ManageInventoryAdmin() {
             </div>
           )}
 
-          {/* Settings (placeholder like ManageUserAdmin) */}
+          {/* Settings */}
           {tab === "Settings" && (
             <div className={CARD}>
               <div className="p-4 border-b">
@@ -465,9 +653,9 @@ export default function ManageInventoryAdmin() {
               {/* Controls */}
               <div className={`${CARD} p-3`}>
                 <div className="flex flex-wrap gap-2 items-center">
-                  <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
+                  <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
                     <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
-                      <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
+                      <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
                       <input
                         className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
                         placeholder="Search ID / name / category / location…"
@@ -481,7 +669,10 @@ export default function ManageInventoryAdmin() {
                     <FilterChip label="Type" value={filterType} onChange={setFilterType} options={["All", ...TYPE_OPTS]} />
                     <FilterChip label="Status" value={filterStatus} onChange={setFilterStatus} options={["All", ...STATUS_OPTS]} />
                     <FilterChip label="Category" value={filterCategory} onChange={setFilterCategory} options={categories} />
-                    <button onClick={exportCSV} className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-neutral-50">
+                    <button
+                      onClick={exportCSV}
+                      className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-neutral-50"
+                    >
                       <Download className="h-4 w-4" /> Export CSV
                     </button>
                   </div>
@@ -520,12 +711,14 @@ export default function ManageInventoryAdmin() {
                             <td className="p-3">LKR {fmtNum(r.unitCost)}</td>
                             <td className="p-3">
                               <select
-                                className="rounded-lg border px-2 py-1.5 text-sm"
+                                className="rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                                 value={r.status || "in_stock"}
                                 onChange={(e) => changeStatusInline(r, e.target.value)}
                               >
                                 {STATUS_OPTS.map((s) => (
-                                  <option key={s} value={s}>{s}</option>
+                                  <option key={s} value={s}>
+                                    {s}
+                                  </option>
                                 ))}
                               </select>
                             </td>
@@ -680,10 +873,21 @@ export default function ManageInventoryAdmin() {
                   <Input value={drawer.location || ""} onChange={(e) => setDrawer({ ...drawer, location: e.target.value })} />
                 </Field>
                 <Field label="Quantity">
-                  <Input type="number" min={0} value={drawer.quantity ?? ""} onChange={(e) => setDrawer({ ...drawer, quantity: e.target.value })} />
+                  <Input
+                    type="number"
+                    min={0}
+                    value={drawer.quantity ?? ""}
+                    onChange={(e) => setDrawer({ ...drawer, quantity: e.target.value })}
+                  />
                 </Field>
                 <Field label="Unit Cost (LKR)">
-                  <Input type="number" min={0} step="0.01" value={drawer.unitCost ?? ""} onChange={(e) => setDrawer({ ...drawer, unitCost: e.target.value })} />
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={drawer.unitCost ?? ""}
+                    onChange={(e) => setDrawer({ ...drawer, unitCost: e.target.value })}
+                  />
                 </Field>
                 <Field label="Purchase Date">
                   <Input
@@ -701,17 +905,30 @@ export default function ManageInventoryAdmin() {
                 </Field>
                 <div className="sm:col-span-3">
                   <Field label="Description">
-                    <Textarea rows={4} value={drawer.description || ""} onChange={(e) => setDrawer({ ...drawer, description: e.target.value })} />
+                    <Textarea
+                      rows={4}
+                      value={drawer.description || ""}
+                      onChange={(e) => setDrawer({ ...drawer, description: e.target.value })}
+                    />
                   </Field>
                 </div>
               </div>
             </div>
 
             <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={closeDrawer} className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50">
+              <button
+                type="button"
+                onClick={closeDrawer}
+                className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
+              >
                 Cancel
               </button>
-              <button type="button" onClick={saveDrawer} disabled={savingDrawer} className={`px-4 py-2 rounded-xl text-white ${GRAD_BG} disabled:opacity-60`}>
+              <button
+                type="button"
+                onClick={saveDrawer}
+                disabled={savingDrawer}
+                className={`px-4 py-2 rounded-xl text-white ${GRAD_BG} disabled:opacity-60`}
+              >
                 {savingDrawer ? "Saving…" : "Save changes"}
               </button>
             </div>
@@ -722,22 +939,76 @@ export default function ManageInventoryAdmin() {
   );
 }
 
-/* ---------- small UI bits (same style as users page) ---------- */
+/* ---------- Vehicle-style sidebar bits ---------- */
+function AccordionHeader({ title, isOpen, onToggle, last = false }) {
+  return (
+    <button
+      onClick={onToggle}
+      className={[
+        "w-full flex items-center justify-between px-3 py-2 text-left text-xs font-medium uppercase tracking-wide",
+        "cursor-pointer",
+        last ? "" : "border-b border-neutral-200",
+      ].join(" ")}
+    >
+      <span className="text-neutral-500">{title}</span>
+      <svg
+        viewBox="0 0 24 24"
+        className={[
+          "h-4 w-4 transition-transform text-neutral-500",
+          isOpen ? "rotate-0" : "rotate-180",
+        ].join(" ")}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="m18 15-6-6-6 6" />
+      </svg>
+    </button>
+  );
+}
+function RailLink({ to, icon, children }) {
+  return (
+    <NavLink to={to} className="block group">
+      {({ isActive }) => (
+        <div
+          className={[
+            "rounded-lg p-[1px] my-1",
+            isActive
+              ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A]"
+              : "bg-gradient-to-r from-transparent to-transparent group-hover:from-[#09E65A1A] group-hover:to-[#16A34A1A]",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm transition",
+              "hover:bg-neutral-50",
+              isActive ? "shadow-sm" : "",
+            ].join(" ")}
+          >
+            <span className="inline-flex items-center gap-2 text-neutral-800 overflow-hidden">
+              {icon}
+              <span className="whitespace-nowrap">{children}</span>
+            </span>
+            <ChevronRight className={`h-4 w-4 ${ICON_COLOR}`} />
+          </span>
+        </div>
+      )}
+    </NavLink>
+  );
+}
 
-function SideTab({ active, icon, onClick, children }) {
+/* ---------- small UI bits (green focus) ---------- */
+function TopTab({ active, onClick, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
-        "w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition border",
+        "rounded-lg px-3 py-1.5 text-sm border",
         active ? "bg-white shadow-sm border-transparent" : "bg-white hover:bg-neutral-50 border-neutral-200",
       ].join(" ")}
     >
-      <span className="inline-flex items-center gap-2 text-neutral-800">
-        <span>{icon}</span>
-        {children}
-      </span>
+      {children}
     </button>
   );
 }
@@ -754,8 +1025,14 @@ function StatCardBig({ label, value }) {
 function FilterChip({ label, value, onChange, options }) {
   return (
     <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-neutral-600 inline-flex items-center gap-1"><Filter className="h-4 w-4" /> {label}</span>
-      <select className="rounded-lg border px-2 py-1.5 text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
+      <span className="text-neutral-600 inline-flex items-center gap-1">
+        <Filter className="h-4 w-4" /> {label}
+      </span>
+      <select
+        className="rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
         {options.map((o) => (
           <option key={o} value={o}>
             {o}
@@ -773,9 +1050,9 @@ function Section({ title, children }) {
     </div>
   );
 }
-function Field({ label, children }) {
+function Field({ label, children, className = "" }) {
   return (
-    <label className="block">
+    <label className={`block ${className}`}>
       <div className="text-sm font-medium mb-1">{label}</div>
       {children}
     </label>
@@ -788,7 +1065,8 @@ function Input(props) {
       className={[
         "w-full rounded-xl border border-neutral-200 px-3 py-2",
         "placeholder:text-neutral-400 text-neutral-800",
-        "focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40",
+        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
+        props.disabled ? "bg-neutral-100 text-neutral-500" : "",
       ].join(" ")}
     />
   );
@@ -800,7 +1078,7 @@ function Textarea(props) {
       className={[
         "w-full rounded-xl border border-neutral-200 px-3 py-2",
         "placeholder:text-neutral-400 text-neutral-800",
-        "focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40",
+        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
       ].join(" ")}
     />
   );
@@ -813,7 +1091,7 @@ function Select({ value, onChange, options = [] }) {
       className={[
         "w-full rounded-xl border border-neutral-200 px-3 py-2",
         "text-neutral-800 bg-white",
-        "focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40",
+        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
       ].join(" ")}
     >
       {options.map((op) => (
@@ -827,16 +1105,21 @@ function Select({ value, onChange, options = [] }) {
 
 function StatusBars({ rows }) {
   const counts = STATUS_OPTS.reduce((acc, s) => ((acc[s] = 0), acc), {});
-  rows.forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
+  rows.forEach((r) => {
+    counts[r.status] = (counts[r.status] || 0) + 1;
+  });
   const data = STATUS_OPTS.map((s) => ({ name: s, value: counts[s] || 0 }));
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
     <div className="space-y-2">
       {data.map((d) => (
         <div key={d.name} className="flex items-center gap-2">
-          <div className="w-28 text-xs text-neutral-600 capitalize">{d.name.replaceAll("_"," ")}</div>
+          <div className="w-28 text-xs text-neutral-600 capitalize">{d.name.replaceAll("_", " ")}</div>
           <div className="flex-1 h-3 bg-neutral-100 rounded">
-            <div className="h-3 rounded" style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#DA22FF,#9733EE)" }} />
+            <div
+              className="h-3 rounded"
+              style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#09E65A,#16A34A)" }}
+            />
           </div>
           <div className="w-8 text-right text-xs text-neutral-700">{d.value}</div>
         </div>
@@ -846,7 +1129,9 @@ function StatusBars({ rows }) {
 }
 function TypeBars({ rows }) {
   const counts = TYPE_OPTS.reduce((acc, t) => ((acc[t] = 0), acc), {});
-  rows.forEach((r) => { counts[r.type] = (counts[r.type] || 0) + 1; });
+  rows.forEach((r) => {
+    counts[r.type] = (counts[r.type] || 0) + 1;
+  });
   const data = TYPE_OPTS.map((t) => ({ name: t, value: counts[t] || 0 }));
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
@@ -855,7 +1140,10 @@ function TypeBars({ rows }) {
         <div key={d.name} className="flex items-center gap-2">
           <div className="w-28 text-xs text-neutral-600">{d.name}</div>
           <div className="flex-1 h-3 bg-neutral-100 rounded">
-            <div className="h-3 rounded" style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#DA22FF,#9733EE)" }} />
+            <div
+              className="h-3 rounded"
+              style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#09E65A,#16A34A)" }}
+            />
           </div>
           <div className="w-8 text-right text-xs text-neutral-700">{d.value}</div>
         </div>
@@ -864,30 +1152,30 @@ function TypeBars({ rows }) {
   );
 }
 
-/* ---------- Modal & SlideOver ---------- */
+/* ---------- Modal & SlideOver (green styling like ManageUser) ---------- */
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      {/* Content */}
+
+      {/* Frame */}
       <div
         className={`relative z-[1001] w-full max-w-3xl rounded-2xl p-[1px] ${GRAD_BG} shadow-2xl`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="rounded-2xl bg-white max-h-[80vh] overflow-y-auto">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 sticky top-0 bg-white">
+        {/* Card (scroll container) */}
+        <div className="rounded-2xl bg-white max-h-[85vh] flex flex-col">
+          {/* Sticky header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 sticky top-0 bg-white z-10">
             <div className="font-semibold">{title}</div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-md hover:bg-neutral-100"
-              aria-label="Close"
-            >
+            <button type="button" onClick={onClose} className="p-2 rounded-md hover:bg-neutral-100" aria-label="Close">
               <X className="h-5 w-5 text-neutral-700" />
             </button>
           </div>
-          <div className="p-5">{children}</div>
+
+          {/* Scrollable body */}
+          <div className="p-5 overflow-y-auto overscroll-contain">{children}</div>
         </div>
       </div>
     </div>
@@ -898,7 +1186,7 @@ function SlideOver({ title, onClose, children }) {
     <div className="fixed inset-0 z-[1000]">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <aside
-        className="absolute right-0 top-0 h-full w-full sm:w-[520px] bg-white shadow-2xl flex flex-col"
+        className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-white shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-3 border-b flex items-center justify-between">

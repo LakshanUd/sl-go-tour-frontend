@@ -215,7 +215,7 @@ export default function CustomerFeedback() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
+    <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 pt-25">
       <Toaster position="top-right" />
 
       {/* Header */}

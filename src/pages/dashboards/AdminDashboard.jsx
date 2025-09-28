@@ -8,24 +8,66 @@ import {
   CalendarDays,
   FileText,
   BarChart3,
-  ShieldCheck,
   Bell,
   ArrowRight,
   ChevronRight,
   Settings,
   RefreshCcw,
+  TrendingUp,
+  Package,
+  ChevronUp,
 } from "lucide-react";
 
-const GRAD_FROM = "from-[#DA22FF]";
-theGrad:; // silence some linters that complain about template-only vars
-const GRAD_TO = "to-[#9733EE]";
+/* Gradient tokens */
+const GRAD_FROM = "from-[#09E65A]";
+const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
-const ICON_COLOR = "text-[#9733EE]";
+const ICON_COLOR = "text-[#16A34A]";
+
+/* LocalStorage key for persisting accordion state */
+const LS_KEY = "adminSidebarOpen";
 
 export default function AdminDashboard() {
-  // demo data — replace with real API calls if you like
   const [loading, setLoading] = useState(true);
   const [recent, setRecent] = useState([]);
+
+  // --- accordion open/close state (persisted; never auto-changed by route) ---
+  const [open, setOpen] = useState({
+    overview: true,
+    content: true,
+    ops: true,
+    reports: true,
+    account: true,
+  });
+
+  // Load persisted state once
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Only apply known keys to avoid future mismatches
+        setOpen((s) => ({
+          overview: typeof parsed.overview === "boolean" ? parsed.overview : s.overview,
+          content: typeof parsed.content === "boolean" ? parsed.content : s.content,
+          ops: typeof parsed.ops === "boolean" ? parsed.ops : s.ops,
+          reports: typeof parsed.reports === "boolean" ? parsed.reports : s.reports,
+          account: typeof parsed.account === "boolean" ? parsed.account : s.account,
+        }));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Persist on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(open));
+    } catch {
+      /* ignore */
+    }
+  }, [open]);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -41,122 +83,189 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Page header */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
+    <div className="min-h-screen bg-neutral-50 pt-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Sidebar (wider + single card) */}
+        <aside className="lg:col-span-4 xl:col-span-3">
+          <div className="rounded-xl border border-neutral-200 bg-white">
+            {/* 01. Overview */}
+            <AccordionHeader
+              title="Overview"
+              isOpen={open.overview}
+              onToggle={() => setOpen((s) => ({ ...s, overview: !s.overview }))}
+            />
+            {open.overview && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Analytics</span>
+                </RailLink>
+              </div>
+            )}
 
-        {/* Settings button — gradient border, white interior */}
-        <div className={`rounded-md p-[1px] ${GRAD_BG}`}>
-          <Link
-            to="/profile/settings"
-            className="inline-flex items-center gap-2 rounded-[6px] bg-white px-3 py-1.5 text-sm text-neutral-800 hover:bg-neutral-50"
-          >
-            <Settings className={`h-4 w-4 ${ICON_COLOR}`} />
-            Settings
-          </Link>
-        </div>
-      </div>
+            {/* 02. Content Management */}
+            <AccordionHeader
+              title="Content Management"
+              isOpen={open.content}
+              onToggle={() => setOpen((s) => ({ ...s, content: !s.content }))}
+            />
+            {open.content && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Tours</span>
+                </RailLink>
+                <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Blogs</span>
+                </RailLink>
+                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Meals</span>
+                </RailLink>
+                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Accommodations</span>
+                </RailLink>
+                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Vehicles</span>
+                </RailLink>
+                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Feedback</span>
+                </RailLink>
+                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+              </div>
+            )}
 
-      {/* Layout: left rail + right content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: rail */}
-        <aside className="lg:col-span-1 space-y-4">
-          {/* Profile / role card with gradient border */}
-          <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-            <section className="rounded-xl bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className={`h-12 w-12 rounded-xl grid place-items-center text-white ${GRAD_BG}`}>
-                  <ShieldCheck className="h-6 w-6" />
+            {/* 03. Operations Management */}
+            <AccordionHeader
+              title="Operations Management"
+              isOpen={open.ops}
+              onToggle={() => setOpen((s) => ({ ...s, ops: !s.ops }))}
+            />
+            {open.ops && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Users</span>
+                </RailLink>
+                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Finance</span>
+                </RailLink>
+                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Bookings</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* 04. Reports */}
+            <AccordionHeader
+              title="Reports"
+              isOpen={open.reports}
+              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
+            />
+            {open.reports && (
+              <div className="px-3 pb-2">
+                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">All Reports</span>
+                </RailLink>
+              </div>
+            )}
+
+            {/* 05. Account Settings */}
+            <AccordionHeader
+              title="Account Settings"
+              isOpen={open.account}
+              onToggle={() => setOpen((s) => ({ ...s, account: !s.account }))}
+              last
+            />
+            {open.account && (
+              <div className="px-3 pb-3">
+                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Profile Settings</span>
+                </RailLink>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Main content (demo cards kept) */}
+        <main className="lg:col-span-8 xl:col-span-9 space-y-6">
+          {/* Top row: green analytics + KPI cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Website Analytics */}
+            <section className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 px-5 pt-5 pb-6 text-white relative">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">Website Analytics</h3>
+                    <p className="text-sm text-emerald-50/90">Total 28.5% Conversion Rate</p>
+                  </div>
+                  <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-md" />
                 </div>
+                <div className="mt-4 flex flex-wrap gap-2 text-[12px]">
+                  <Pill>268 Direct</Pill>
+                  <Pill>890 Organic</Pill>
+                  <Pill>62 Referral</Pill>
+                  <Pill>1.2k Campaign</Pill>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 divide-x">
+                <Metric k="Sessions" v="12,849" />
+                <Metric k="Page Views" v="48,210" />
+                <Metric k="Avg. Time" v="3m 12s" />
+                <Metric k="Bounce" v="32.1%" />
+              </div>
+            </section>
+
+            <KpiCard title="Average Daily Sales" value="$28,450" sub="Total Sales This Month" trend="+18.2%" />
+
+            {/* Sales Overview */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-sm text-neutral-500">Signed in as</div>
-                  <div className="font-semibold text-neutral-900">Admin</div>
+                  <div className="text-sm text-neutral-500">Sales Overview</div>
+                  <div className="text-xl font-semibold text-neutral-900">$42.5k</div>
+                </div>
+                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+18.2%</span>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg border border-neutral-200 p-3">
+                  <div className="text-neutral-500 mb-1">Order</div>
+                  <div className="font-semibold">62.2%</div>
+                  <div className="text-[11px] text-neutral-500">6,440</div>
+                </div>
+                <div className="rounded-lg border border-neutral-200 p-3">
+                  <div className="text-neutral-500 mb-1">Visits</div>
+                  <div className="font-semibold">25.5%</div>
+                  <div className="text-[11px] text-neutral-500">12,749</div>
                 </div>
               </div>
-
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <MiniStat k="Users" v="1,248" />
-                <MiniStat k="Bookings" v="312" />
-                <MiniStat k="MTD Rev." v="LKR 5.8M" />
-              </div>
-
-              <div className="mt-4">
-                <Link
-                  to="/profile/settings"
-                  className={`w-full inline-flex items-center justify-center gap-2 rounded-lg py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
-                >
-                  <Settings size={16} />
-                  Open Settings
-                </Link>
+              <div className="mt-4 h-2 rounded-full bg-neutral-100 overflow-hidden">
+                <div className="h-full w-2/3 bg-emerald-500" />
               </div>
             </section>
           </div>
 
-          {/* Nav groups */}
-          <NavGroup title="Manage">
-            <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Users
-            </RailLink>
-            <RailLink to="/admin/tour-packages" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Manage Tours
-            </RailLink>
-            <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Bookings
-            </RailLink>
-            <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Vehicles
-            </RailLink>
-            <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Accommodations
-            </RailLink>
-            <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Meals
-            </RailLink>
-            <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Blogs
-            </RailLink>
-          </NavGroup>
+          {/* Second row: Earning Reports + Support Tracker */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section className="lg:col-span-2 bg-white rounded-xl border border-neutral-200">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
+                <h3 className="text-sm font-medium text-neutral-700">Earning Reports</h3>
+                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+4.2%</span>
+              </div>
+              <div className="p-4">
+                <div className="text-3xl font-semibold">$468</div>
+                <p className="text-sm text-neutral-500">
+                  Weekly Earnings Overview — informed of this week compared to last week
+                </p>
+                <div className="mt-5 grid grid-cols-12 gap-1 h-32 items-end">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div key={i} className="bg-emerald-500/80 rounded" style={{ height: `${30 + (i % 6) * 10}px` }} />
+                  ))}
+                </div>
+              </div>
+            </section>
 
-          <NavGroup title="Reports & Alerts">
-            <RailLink to="/admin/reports/monthly" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Monthly Report
-            </RailLink>
-            <RailLink to="/admin/reports/finance-transactions" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Finance Transactions
-            </RailLink>
-            <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
-              Feedback & Alerts
-            </RailLink>
-          </NavGroup>
-        </aside>
-
-        {/* RIGHT: content */}
-        <main className="lg:col-span-2 space-y-6">
-          {/* Quick stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard
-              title="System status"
-              value="All systems normal"
-              icon={<LayoutDashboard className={`h-5 w-5 ${ICON_COLOR}`} />}
-            />
-            <StatCard
-              title="Pending approvals"
-              value="3 items"
-              icon={<ShieldCheck className={`h-5 w-5 ${ICON_COLOR}`} />}
-            />
-            <StatCard
-              title="Support tickets"
-              value="7 open"
-              icon={<Bell className={`h-5 w-5 ${ICON_COLOR}`} />}
-            />
-          </div>
-
-          {/* Action shortcuts */}
-          <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-            <section className="rounded-xl bg-white">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
-                <h3 className="text-sm font-medium text-neutral-700">Quick actions</h3>
+            <section className="bg-white rounded-xl border border-neutral-200">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
+                <h3 className="text-sm font-medium text-neutral-700">Support Tracker</h3>
                 <button
                   className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
                   onClick={() => window.location.reload()}
@@ -166,15 +275,41 @@ export default function AdminDashboard() {
                   Refresh
                 </button>
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
-                <DashLink to="/admin/manage-users" icon={<Users className={`h-5 w-5 ${ICON_COLOR}`} />} label="Manage Users" />
-                <DashLink to="/admin/financial-overview" icon={<Wallet className={`h-5 w-5 ${ICON_COLOR}`} />} label="Financial Overview" />
-                <DashLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-5 w-5 ${ICON_COLOR}`} />} label="Manage Bookings" />
+              <div className="p-4 space-y-4">
+                <div className="text-3xl font-semibold">164</div>
+                <div className="text-sm text-neutral-500">Total Tickets (Last 7 days)</div>
+                <div className="relative mx-auto w-40 h-40">
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    <circle cx="50" cy="50" r="42" className="stroke-neutral-200 fill-none" strokeWidth="10" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="42"
+                      className="stroke-emerald-500 fill-none"
+                      strokeWidth="10"
+                      strokeDasharray="264"
+                      strokeDashoffset="70"
+                      strokeLinecap="round"
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 grid place-items-center">
+                    <div className="text-center">
+                      <div className="text-xl font-semibold">78%</div>
+                      <div className="text-xs text-neutral-500">Resolved</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <Badge k="New" v="24" />
+                  <Badge k="Open" v="36" />
+                  <Badge k="Closed" v="104" />
+                </div>
               </div>
             </section>
           </div>
 
-          {/* Recent activity */}
+          {/* Recent activity list */}
           <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
             <section className="rounded-xl bg-white shadow-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
@@ -183,7 +318,6 @@ export default function AdminDashboard() {
                   View all <ArrowRight className={`h-4 w-4 ${ICON_COLOR}`} />
                 </Link>
               </div>
-
               <div className="px-4 py-3">
                 {loading ? (
                   <ActivitySkeleton rows={4} />
@@ -211,16 +345,26 @@ export default function AdminDashboard() {
   );
 }
 
-/* ---------- small bits ---------- */
+/* ---------- Sidebar bits ---------- */
 
-function NavGroup({ title, children }) {
+function AccordionHeader({ title, isOpen, onToggle, last = false }) {
   return (
-    <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-      <section className="rounded-xl bg-white p-3 shadow-sm">
-        <div className="px-1 pb-2 text-xs font-medium uppercase tracking-wide text-neutral-500">{title}</div>
-        <div className="space-y-2">{children}</div>
-      </section>
-    </div>
+    <button
+      onClick={onToggle}
+      className={[
+        "w-full flex items-center justify-between px-3 py-2 text-left text-xs font-medium uppercase tracking-wide",
+        "cursor-pointer", // make it clear it's clickable
+        last ? "" : "border-b border-neutral-200",
+      ].join(" ")}
+    >
+      <span className="text-neutral-500">{title}</span>
+      <ChevronUp
+        className={[
+          "h-4 w-4 transition-transform text-neutral-500",
+          isOpen ? "rotate-0" : "rotate-180",
+        ].join(" ")}
+      />
+    </button>
   );
 }
 
@@ -228,16 +372,24 @@ function RailLink({ to, icon, children }) {
   return (
     <NavLink to={to} className="block group">
       {({ isActive }) => (
-        <div className={`rounded-lg p-[1px] ${isActive ? GRAD_BG : "bg-gradient-to-r from-transparent to-transparent group-hover:from-[#DA22FF1A] group-hover:to-[#9733EE1A]"}`}>
+        <div
+          className={[
+            "rounded-lg p-[1px] my-1",
+            isActive
+              ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A]"
+              : "bg-gradient-to-r from-transparent to-transparent group-hover:from-[#09E65A1A] group-hover:to-[#16A34A1A]",
+          ].join(" ")}
+        >
           <span
             className={[
               "flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm transition",
-              isActive ? "shadow-sm" : "hover:bg-neutral-50",
+              "hover:bg-neutral-50",
+              isActive ? "shadow-sm" : "",
             ].join(" ")}
           >
-            <span className="inline-flex items-center gap-2 text-neutral-800">
+            <span className="inline-flex items-center gap-2 text-neutral-800 overflow-hidden">
               {icon}
-              {children}
+              <span className="whitespace-nowrap">{children}</span>
             </span>
             <ChevronRight className={`h-4 w-4 ${ICON_COLOR}`} />
           </span>
@@ -247,48 +399,58 @@ function RailLink({ to, icon, children }) {
   );
 }
 
-function MiniStat({ k, v }) {
+/* ---------- Small reusable bits ---------- */
+
+function Metric({ k, v }) {
   return (
-    <div className="rounded-lg border bg-white p-2">
+    <div className="p-4 text-center">
+      <div className="text-xs text-neutral-600">{k}</div>
+      <div className="text-sm font-semibold text-neutral-900 mt-0.5">{v}</div>
+    </div>
+  );
+}
+
+function Pill({ children }) {
+  return <span className="px-2 py-1 rounded-full bg-white/20 text-white text-[11px]">{children}</span>;
+}
+
+function KpiCard({ title, value, sub, trend }) {
+  return (
+    <section className="bg-white rounded-xl border border-neutral-200 p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm text-neutral-500">{title}</div>
+          <div className="text-xl font-semibold text-neutral-900">{value}</div>
+        </div>
+        <div className="h-10 w-10 rounded-lg bg-neutral-50 border border-neutral-200 grid place-items-center">
+          <TrendingUp className={`h-5 w-5 ${ICON_COLOR}`} />
+        </div>
+      </div>
+      <div className="text-xs text-neutral-500 mt-1">{sub}</div>
+      <div className="mt-4 h-24 rounded-lg bg-neutral-100 overflow-hidden relative">
+        <div className="absolute inset-0 flex items-end gap-1 px-2">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div key={i} className="w-1 bg-neutral-300" style={{ height: `${20 + (i % 7) * 3}px` }} />
+          ))}
+        </div>
+      </div>
+      <div className="mt-2 text-xs text-emerald-600">{trend}</div>
+    </section>
+  );
+}
+
+function Badge({ k, v }) {
+  return (
+    <div className="rounded-lg border border-neutral-200 px-3 py-2 bg-white">
       <div className="text-[11px] text-neutral-500">{k}</div>
       <div className="text-sm font-semibold text-neutral-900">{v}</div>
     </div>
   );
 }
 
-function StatCard({ title, value, icon }) {
-  return (
-    <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-      <div className="rounded-xl bg-white p-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-neutral-50 border border-neutral-200 grid place-items-center">
-          {icon}
-        </div>
-        <div>
-          <div className="text-xs text-neutral-500">{title}</div>
-          <div className="text-sm font-medium text-neutral-800">{value}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DashLink({ to, icon, label }) {
-  return (
-    <Link to={to} className={`rounded-lg p-[1px] ${GRAD_BG}`}>
-      <div className="rounded-lg bg-white px-4 py-3 flex items-center justify-between">
-        <span className="inline-flex items-center gap-2">
-          {icon}
-          <span>{label}</span>
-        </span>
-        <ArrowRight className={`h-4 w-4 ${ICON_COLOR}`} />
-      </div>
-    </Link>
-  );
-}
-
 function ActivitySkeleton({ rows = 4 }) {
   return (
-    <div className="animate-pulse space-y-3">
+    <div className="animate-pulse space-y-3 p-4">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="h-10 rounded bg-neutral-100" />
       ))}
