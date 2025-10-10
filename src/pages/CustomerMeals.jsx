@@ -6,8 +6,8 @@ import { ShoppingCart, Eye, Search, BadgeCheck } from "lucide-react";
 import { CartAPI } from "../api/cart";
 
 /* theme tokens */
-const gradFrom = "from-[#DA22FF]";
-const gradTo = "to-[#9733EE]";
+const gradFrom = "from-[#09E65A]";
+const gradTo = "to-[#16A34A]";
 const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
 const gradText = `text-transparent bg-clip-text bg-gradient-to-r ${gradFrom} ${gradTo}`;
 
@@ -45,7 +45,7 @@ export default function CustomerMeals() {
   const [rows, setRows] = useState([]);
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
-  const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [onlyAvailable, setOnlyAvailable] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const [open, setOpen] = useState(false);
@@ -140,7 +140,7 @@ export default function CustomerMeals() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-28">
       {/* Header row */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-5">
         <div>
@@ -148,15 +148,14 @@ export default function CustomerMeals() {
             <span className={gradText}>Meals</span> for you
           </h2>
           <p className="text-sm text-neutral-500">Freshly prepared options you’ll love.</p>
-          <p className="text-[10px] text-neutral-400 mt-1">API: {BASE}/api/meals</p>
         </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
-          <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
+          <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
             <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
-              <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
+              <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
               <input
                 className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
                 placeholder="Search meals…"
@@ -170,7 +169,7 @@ export default function CustomerMeals() {
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+            className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
           >
             <option value="">All categories</option>
             {categories.map((c) => (
@@ -179,17 +178,6 @@ export default function CustomerMeals() {
               </option>
             ))}
           </select>
-
-          {/* Availability */}
-          <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
-            <input
-              type="checkbox"
-              className="rounded border-neutral-300"
-              checked={onlyAvailable}
-              onChange={(e) => setOnlyAvailable(e.target.checked)}
-            />
-            Only available
-          </label>
         </div>
       </div>
 
@@ -265,7 +253,7 @@ export default function CustomerMeals() {
 
                 <div className="flex items-center justify-between pt-2">
                   <button
-                    className="inline-flex items-center gap-2 text-sm text-neutral-700 hover:text-neutral-900"
+                    className="inline-flex items-center gap-2 text-sm text-neutral-700 hover:text-neutral-900 cursor-pointer"
                     onClick={() => openPreview(m)}
                   >
                     <Eye size={16} />
@@ -273,7 +261,7 @@ export default function CustomerMeals() {
                   </button>
 
                   <button
-                    className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 disabled:opacity-50`}
+                    className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 disabled:opacity-50 cursor-pointer`}
                     disabled={!m.avalability}
                     onClick={() => addMealToCart(m)}
                   >
@@ -345,13 +333,13 @@ export default function CustomerMeals() {
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
-                  className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
+                  className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 cursor-pointer"
                   onClick={() => setOpen(false)}
                 >
                   Close
                 </button>
                 <button
-                  className={`px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90`}
+                  className={`px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 cursor-pointer`}
                   disabled={!active?.avalability}
                   onClick={() => addMealToCart(active)}
                 >

@@ -78,7 +78,7 @@ export default function TourPackageView() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 lg:px-0 py-6">
+    <div className="max-w-3xl mx-auto px-4 lg:px-0 py-6 pt-28">
       <Toaster position="top-right" />
 
       <div className="mb-4 flex items-center justify-between">

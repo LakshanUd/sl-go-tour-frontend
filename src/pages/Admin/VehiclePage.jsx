@@ -88,6 +88,13 @@ const VehicleAPI = {
 /* Helpers */
 const getVehicleID = (v) => v?.vehicleID || v?.productID || v?._id;
 
+// NEW: generator for auto Vehicle IDs (pattern similar to other IDs in your backend)
+function generateVehicleID() {
+  const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+  return `V-${ymd}-${rand}`;
+}
+
 const EMPTY = {
   vehicleID: "",
   regNo: "",
@@ -126,6 +133,7 @@ export default function VehiclePage() {
   const [editingVehicleID, setEditingVehicleID] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [file, setFile] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Load persisted sidebar state once
   useEffect(() => {
@@ -198,7 +206,8 @@ export default function VehiclePage() {
   function openCreate() {
     setMode("create");
     setEditingVehicleID(null);
-    setForm(EMPTY);
+    // NEW: auto-generate ID for create
+    setForm({ ...EMPTY, vehicleID: generateVehicleID() });
     setFile(null);
     setOpenModal(true);
   }
@@ -256,6 +265,7 @@ export default function VehiclePage() {
 
   async function onSubmit(e) {
     e.preventDefault();
+    if (submitting) return;
 
     if (!form.vehicleID.trim() || !form.regNo.trim() || !form.brand.trim()) {
       toast.error("vehicleID, regNo, brand are required");
@@ -271,6 +281,7 @@ export default function VehiclePage() {
     }
 
     try {
+      setSubmitting(true);
       let imageUrls = (form.images || "")
         .split(",")
         .map((s) => s.trim())
@@ -304,6 +315,7 @@ export default function VehiclePage() {
       setFile(null);
       await load();
     } catch { /* toasted globally */ }
+    finally { setSubmitting(false); }
   }
 
   return (
@@ -442,7 +454,7 @@ export default function VehiclePage() {
               {/* Refresh */}
               <button
                 onClick={load}
-                className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+                className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50 cursor-pointer"
                 title="Refresh"
               >
                 <RefreshCcw className={["h-4 w-4", loading ? "animate-spin" : ""].join(" ")} />
@@ -452,7 +464,7 @@ export default function VehiclePage() {
               {/* New */}
               <button
                 onClick={openCreate}
-                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90 cursor-pointer`}
               >
                 <Plus size={16} />
                 New
@@ -573,14 +585,14 @@ export default function VehiclePage() {
                       <div className="mt-4 flex items-center justify-end gap-2">
                         <button
                           onClick={() => openEdit(v)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-neutral-900 hover:bg-neutral-800 rounded-none"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-neutral-900 hover:bg-neutral-800 rounded-none cursor-pointer"
                           title="Edit"
                         >
                           <Pencil className="h-4 w-4" /> Edit
                         </button>
                         <button
                           onClick={() => onDelete(v)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-rose-600 hover:bg-rose-700 rounded-none"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-white bg-rose-600 hover:bg-rose-700 rounded-none cursor-pointer"
                           title="Delete"
                         >
                           <Trash2 className="h-4 w-4" /> Delete
@@ -620,15 +632,6 @@ export default function VehiclePage() {
 
               <form onSubmit={onSubmit} className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Vehicle ID *</Label>
-                    <Input
-                      value={form.vehicleID}
-                      onChange={(e) => setForm((f) => ({ ...f, vehicleID: e.target.value }))}
-                      placeholder="V-001"
-                      required
-                    />
-                  </div>
                   <div>
                     <Label>Reg No *</Label>
                     <Input
@@ -735,8 +738,14 @@ export default function VehiclePage() {
                   >
                     Cancel
                   </button>
-                  <button type="submit" className={`px-4 py-2 rounded-xl text-white ${GRAD_BG}`}>
-                    {mode === "create" ? "Create" : "Update"}
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={`px-4 py-2 rounded-xl text-white ${GRAD_BG} ${submitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                  >
+                    {mode === "create"
+                      ? (submitting ? "Creating…" : "Create")
+                      : (submitting ? "Updating…" : "Update")}
                   </button>
                 </div>
               </form>

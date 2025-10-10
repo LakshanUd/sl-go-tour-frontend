@@ -41,6 +41,7 @@ import VehicleCustomer from "./pages/VehicleCustomer.jsx";
 import AccommodationCustomer from "./pages/AccommodationCustomer.jsx";
 import CustomerFeedback from "./pages/CustomerFeedback.jsx";
 import FeedbackPublic from "./pages/FeedbackPublic.jsx";
+import BlogView from "./pages/BlogView.jsx";
 
 // Tours
 import TourPackageListAdmin from "./pages/Admin/TourPackageListAdmin.jsx";
@@ -126,6 +127,8 @@ function App() {
             </RoleRoute>
           }
         />
+
+        <Route path="/blogs/:id" element={<BlogView />} />
 
         {/* ---------- Reports (Admin only) ---------- */}
         <Route

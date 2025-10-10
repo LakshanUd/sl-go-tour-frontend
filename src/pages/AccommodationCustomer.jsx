@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 
 /* ===== Theme tokens ===== */
-const gradFrom = "from-[#DA22FF]";
-const gradTo = "to-[#9733EE]";
+const gradFrom = "from-[#09E65A]";
+const gradTo = "to-[#16A34A]";
 const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
 const gradText = `text-transparent bg-clip-text bg-gradient-to-r ${gradFrom} ${gradTo}`;
 
@@ -161,7 +161,7 @@ export default function AccommodationCustomer() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-28">
       {/* Header row — same vibe as VehicleCustomer */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <div>
@@ -174,9 +174,9 @@ export default function AccommodationCustomer() {
         </div>
 
         {/* Search */}
-        <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
+        <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
           <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
-            <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
+            <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
             <input
               className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
               placeholder="Search name, type, amenity, price…"
@@ -215,7 +215,7 @@ export default function AccommodationCustomer() {
               >
                 {/* Image / Preview */}
                 <button
-                  className="w-full aspect-[4/3] bg-neutral-50"
+                  className="w-full aspect-[4/3] bg-neutral-50 cursor-pointer"
                   onClick={() => openPreview(a)}
                   title="Quick preview"
                 >
@@ -270,7 +270,7 @@ export default function AccommodationCustomer() {
 
                   <div className="flex items-center justify-between pt-2">
                     <button
-                      className="inline-flex items-center gap-2 text-sm text-neutral-700 hover:text-neutral-900"
+                      className="inline-flex items-center gap-2 text-sm text-neutral-700 hover:text-neutral-900 cursor-pointer"
                       onClick={() => openPreview(a)}
                     >
                       <Eye size={16} />
@@ -278,7 +278,7 @@ export default function AccommodationCustomer() {
                     </button>
 
                     <button
-                      className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90`}
+                      className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 cursor-pointer`}
                       onClick={() => addAccommodationToCart(a)}
                     >
                       <ShoppingCart size={16} />
@@ -357,13 +357,13 @@ export default function AccommodationCustomer() {
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
-                  className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
+                  className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 cursor-pointer"
                   onClick={() => setOpen(false)}
                 >
                   Close
                 </button>
                 <button
-                  className={`px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 inline-flex items-center gap-2`}
+                  className={`px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 inline-flex items-center gap-2 cursor-pointer`}
                   onClick={() => addAccommodationToCart(active)}
                 >
                   <ShoppingCart size={16} />
