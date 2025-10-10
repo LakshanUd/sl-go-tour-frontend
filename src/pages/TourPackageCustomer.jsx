@@ -17,8 +17,8 @@ import {
 import { CartAPI } from "../api/cart";
 
 /* ===== Theme tokens ===== */
-const gradFrom = "from-[#DA22FF]";
-const gradTo = "to-[#9733EE]";
+const gradFrom = "from-[#09E65A]";
+const gradTo = "to-[#16A34A]";
 const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
 const gradText = `text-transparent bg-clip-text bg-gradient-to-r ${gradFrom} ${gradTo}`;
 
@@ -165,7 +165,7 @@ export default function TourPackageCustomer() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pt-28">
       {/* Header row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-5">
         <div>
@@ -175,15 +175,12 @@ export default function TourPackageCustomer() {
           <p className="text-sm text-neutral-500">
             Hand-picked experiences across Sri Lanka.
           </p>
-          <p className="text-[10px] text-neutral-400 mt-1">
-            API: {BASE}/api/tour-packages
-          </p>
         </div>
 
         {/* Search */}
-        <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
+        <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
           <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
-            <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
+            <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
             <input
               className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
               placeholder="Search by name, type, duration…"
@@ -343,8 +340,6 @@ export default function TourPackageCustomer() {
                 </span>
               </div>
 
-              <p className="text-sm text-neutral-700">{active.description || "—"}</p>
-
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Link
                   to={`/tour-packages/${encodeURIComponent(active.tourPakage_ID)}`}
@@ -352,7 +347,7 @@ export default function TourPackageCustomer() {
                   onClick={() => setOpenPreview(false)}
                 >
                   <Eye size={16} />
-                  Open Page
+                  Full Details
                 </Link>
                 <button
                   className={`px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 inline-flex items-center gap-2 cursor-pointer`}
@@ -411,7 +406,7 @@ export default function TourPackageCustomer() {
                     <span className="block text-sm font-medium mb-1">Passengers *</span>
                     <div className="flex items-center gap-2">
                       <div className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 bg-white">
-                        <Users className="h-4 w-4 text-[#9733EE]" />
+                        <Users className="h-4 w-4 text-[#16A34A]" />
                         <input
                           type="number"
                           min={1}

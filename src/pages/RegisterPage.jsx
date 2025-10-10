@@ -5,8 +5,8 @@ import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, Link } from "react-router-dom";
 import { UserPlus, ShieldCheck, Sparkles, CheckCircle2, XCircle } from "lucide-react";
 
-const GRAD_FROM = "from-[#DA22FF]";
-const GRAD_TO = "to-[#9733EE]";
+const GRAD_FROM = "from-[#09E65A]";
+const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
 const GLASS =
   "backdrop-blur-xl bg-white/70 supports-[backdrop-filter]:bg-white/60 border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)]";
@@ -120,7 +120,7 @@ export default function RegisterPage() {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden pt-24">
       <Toaster position="top-right" />
 
       {/* Vivid gradient backdrop */}
@@ -198,7 +198,7 @@ export default function RegisterPage() {
                         onChange={onChange}
                         required
                         placeholder="John"
-                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                       />
                     </Field>
                     <Field label="Last Name">
@@ -209,7 +209,7 @@ export default function RegisterPage() {
                         onChange={onChange}
                         required
                         placeholder="Doe"
-                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                       />
                     </Field>
                   </div>
@@ -223,7 +223,7 @@ export default function RegisterPage() {
                       onChange={onChange}
                       required
                       placeholder="you@example.com"
-                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                     />
                   </Field>
 
@@ -236,7 +236,7 @@ export default function RegisterPage() {
                       onChange={onChange}
                       required
                       placeholder="+94 77 123 4567"
-                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                     />
                   </Field>
 
@@ -252,7 +252,7 @@ export default function RegisterPage() {
                           minLength={8}
                           required
                           placeholder="••••••••"
-                          className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                          className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                         />
                         <button
                           type="button"
@@ -290,7 +290,7 @@ export default function RegisterPage() {
                           minLength={8}
                           required
                           placeholder="••••••••"
-                          className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                          className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                         />
                         <button
                           type="button"
@@ -313,7 +313,7 @@ export default function RegisterPage() {
                         onChange={onChange}
                         required
                         placeholder="Sri Lankan"
-                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                       />
                     </Field>
                     <Field label="Gender">
@@ -322,7 +322,7 @@ export default function RegisterPage() {
                         value={form.gender}
                         onChange={onChange}
                         required
-                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                       >
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>

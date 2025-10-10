@@ -7,8 +7,8 @@ import { ArrowLeft, Save, Hotel, Car, Utensils, Search } from "lucide-react";
 import MediaUpload from "../utils/mediaUpload";
 
 /* ===== Theme ===== */
-const gradFrom = "from-[#DA22FF]";
-const gradTo = "to-[#9733EE]";
+const gradFrom = "from-[#09E65A]";
+const gradTo = "to-[#16A34A]";
 const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
 
 /* ===== API ===== */
@@ -215,7 +215,7 @@ export default function TourPackageEditor({ mode = "create" }) {
   }, [mealList, mealQ]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 pt-25">
+    <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6 pt-28">
       <Toaster position="top-right" />
 
       <div className="mb-4 flex items-center justify-between">
@@ -236,37 +236,16 @@ export default function TourPackageEditor({ mode = "create" }) {
         {/* LEFT: writing/document area */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-5">
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Business ID *</label>
-              <input
-                value={form.tourPakage_ID}
-                onChange={onChange("tourPakage_ID")}
-                className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
-                placeholder="TP-20240901-ABCD"
-                required
-              />
-            </div>
-
+          
             <div>
               <label className="block text-sm font-medium mb-1.5">Title *</label>
               <input
                 value={form.name}
                 onChange={onChange("name")}
-                className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                 placeholder="Galle Day Tour"
                 required
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Hero & gallery (comma-separated URLs)</label>
-              <input
-                value={form.imagesCSV}
-                onChange={onChange("imagesCSV")}
-                className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
-                placeholder="https://… , https://…"
-              />
-              <p className="text-[11px] text-neutral-500 mt-1">First image is used as cover on the view page.</p>
             </div>
 
             {/* NEW: single file upload (same as VehiclePage) */}
@@ -276,7 +255,7 @@ export default function TourPackageEditor({ mode = "create" }) {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
               />
               <p className="text-[11px] text-neutral-500 mt-1">
                 If selected, the uploaded image URL will be added to the gallery automatically.
@@ -289,7 +268,7 @@ export default function TourPackageEditor({ mode = "create" }) {
                 rows={16}
                 value={form.description}
                 onChange={onChange("description")}
-                className="w-full rounded-xl border border-neutral-200 px-3 py-2 leading-7 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+                className="w-full rounded-xl border border-neutral-200 px-3 py-2 leading-7 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                 placeholder="Write like a blog article…"
               />
             </div>
@@ -305,7 +284,7 @@ export default function TourPackageEditor({ mode = "create" }) {
                 <select
                   value={form.type}
                   onChange={onChange("type")}
-                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                 >
                   {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -318,7 +297,7 @@ export default function TourPackageEditor({ mode = "create" }) {
                   min={0}
                   value={form.price}
                   onChange={onChange("price")}
-                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                   placeholder="25000"
                   required
                 />
@@ -329,7 +308,7 @@ export default function TourPackageEditor({ mode = "create" }) {
                 <input
                   value={form.duration}
                   onChange={onChange("duration")}
-                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/30"
+                  className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                   placeholder="1 Day / 3 Days / 7 Days…"
                   required
                 />
@@ -387,9 +366,9 @@ function SelectorCard({ icon, title, q, setQ, options, selected, toggle }) {
         {icon} {title}
       </div>
 
-      <div className="mb-2 flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#DA22FF] group-focus-within:to-[#9733EE]">
+      <div className="mb-2 flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
         <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-full border border-neutral-200 transition-colors group-focus-within:border-transparent">
-          <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#9733EE]" />
+          <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
           <input
             className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
             placeholder="Search…"
@@ -405,7 +384,7 @@ function SelectorCard({ icon, title, q, setQ, options, selected, toggle }) {
           const isSel = selected.has(op.id);
           return (
             <label key={op.id} className="flex items-center gap-2 p-2 cursor-pointer hover:bg-neutral-50">
-              <input type="checkbox" className="accent-[#9733EE]" checked={isSel} onChange={() => toggle(op.id)} />
+              <input type="checkbox" className="accent-[#16A34A]" checked={isSel} onChange={() => toggle(op.id)} />
               <div className="flex-1">
                 <div className="text-sm text-neutral-800">{op.title}</div>
                 {op.sub && <div className="text-xs text-neutral-500">{op.sub}</div>}

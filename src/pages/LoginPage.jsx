@@ -6,8 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
 import { LogIn, ShieldCheck, Sparkles } from "lucide-react";
 
-const GRAD_FROM = "from-[#DA22FF]";
-const GRAD_TO = "to-[#9733EE]";
+const GRAD_FROM = "from-[#09E65A]";
+const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
 const GLASS =
   "backdrop-blur-xl bg-white/70 supports-[backdrop-filter]:bg-white/60 border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)]";
@@ -124,7 +124,7 @@ export default function LoginPage() {
     : null;
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden pt-24">
       <Toaster position="top-right" />
 
       {/* Vivid gradient backdrop */}
@@ -201,7 +201,7 @@ export default function LoginPage() {
                       autoComplete="username"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                       placeholder="you@example.com"
                       required
                     />
@@ -218,7 +218,7 @@ export default function LoginPage() {
                         minLength={6}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#DA22FF]/40"
+                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
                         placeholder="••••••••"
                         required
                       />
