@@ -45,7 +45,7 @@ const gradText = `text-transparent bg-clip-text ${GRAD_BG}`;
 const LS_KEY = "adminSidebarOpen";
 
 /* ---- Dropdown options (mirror your model) ---- */
-const TYPES = ["Hotel", "Villa", "Apartment", "Guest House", "Hostel", "Resort", "Homestay"];
+const TYPES = ["Single Room", "Double Room", "Family Room"];
 const STATUSES = ["Available", "Fully Booked", "Temporarily Closed"];
 
 /* ---- Backend base ---- */
@@ -656,7 +656,7 @@ export default function AccommodationAdmin() {
               <form onSubmit={onSubmit} className="p-5 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-2">
-                    <Label>Name *</Label>
+                    <Label>Room Number *</Label>
                     <Input
                       value={form.name}
                       onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -685,7 +685,7 @@ export default function AccommodationAdmin() {
                     />
                   </div>
                   <div>
-                    <Label>Capacity *</Label>
+                    <Label>No. of Person *</Label>
                     <Input
                       type="number"
                       min={1}

@@ -881,35 +881,37 @@ export default function ManageInventoryAdmin() {
                     </thead>
                     <tbody>
                       {!loading &&
-                        returnList.map((r) => {
-                          const status = computeStatus(r);
-                          const busy = !!returning[r._id];
-                          return (
-                            <tr key={r._id} className="border-t">
-                              <td className="p-3">
-                                <div className="font-medium text-neutral-800">{r.name || "—"}</div>
-                                <div className="text-xs text-neutral-500">
-                                  {(r.inventoryID || r._id) || "—"} · {r.category || "—"} · {r.location || "—"}
-                                </div>
-                              </td>
-                              <td className="p-3">{Math.max(0, Number(r.quantity || 0))}</td>
-                              <td className="p-3"><StatusPill value={status} /></td>
-                              <td className="p-3">
-                                <div className="flex items-center justify-end">
-                                  <button
-                                    onClick={() => onReturn(r)}
-                                    disabled={busy}
-                                    className="px-3 py-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
-                                  >
-                                    {busy ? "Returning…" : "Return"}
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        returnList
+                          .filter((r) => Math.max(0, Number(r.quantity || 0)) > 0)
+                          .map((r) => {
+                            const status = computeStatus(r);
+                            const busy = !!returning[r._id];
+                            return (
+                              <tr key={r._id} className="border-t">
+                                <td className="p-3">
+                                  <div className="font-medium text-neutral-800">{r.name || "—"}</div>
+                                  <div className="text-xs text-neutral-500">
+                                    {(r.inventoryID || r._id) || "—"} · {r.category || "—"} · {r.location || "—"}
+                                  </div>
+                                </td>
+                                <td className="p-3">{Math.max(0, Number(r.quantity || 0))}</td>
+                                <td className="p-3"><StatusPill value={status} /></td>
+                                <td className="p-3">
+                                  <div className="flex items-center justify-end">
+                                    <button
+                                      onClick={() => onReturn(r)}
+                                      disabled={busy}
+                                      className="px-3 py-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
+                                    >
+                                      {busy ? "Returning…" : "Return"}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
 
-                      {!loading && returnList.length === 0 && (
+                      {!loading && returnList.filter((r) => Math.max(0, Number(r.quantity || 0)) > 0).length === 0 && (
                         <tr>
                           <td className="p-8 text-center text-neutral-500" colSpan={4}>
                             {rows.length === 0 ? "No inventory records." : "Nothing matches your search."}
@@ -1052,13 +1054,20 @@ export default function ManageInventoryAdmin() {
                       <label className="block text-sm font-medium text-neutral-700 mb-1">
                         Location
                       </label>
-                      <input
+                      <select
                         type="text"
                         value={addStockForm.location}
                         onChange={(e) => onChangeAddStock("location", e.target.value)}
                         className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
                         placeholder="Main Warehouse"
-                      />
+                      >
+                        <option value="Floor 1">Floor 1</option>
+                        <option value="Floor 2">Floor 2</option>
+                        <option value="Shelf 1">Shelf 1</option>
+                        <option value="Shelf 2">Shelf 2</option>
+                        <option value="Rack 1">Rack 1</option>
+                        <option value="Rack 2">Rack 2</option>
+                      </select>
                     </div>
                   </div>
 
