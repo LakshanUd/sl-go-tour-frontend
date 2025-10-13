@@ -52,7 +52,7 @@ const DataAPI = {
   meals:          () => api.get("/api/meals"),
 };
 
-const TYPES = ["City Tour", "Village Tour", "Sea Tour", "Lagoon Tour"];
+const TYPES = ["City Tour", "Village Tour", "Beach Tour", "Lagoon Tour"];
 const EMPTY = {
   tourPakage_ID: "",
   name: "",
