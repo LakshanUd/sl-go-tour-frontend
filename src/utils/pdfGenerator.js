@@ -670,13 +670,21 @@ export async function generateVehicleReportPDF(reports) {
     { label: "Maintenance Load", value: maintenanceLoad }
   ];
 
-  const mostRentedData = reports.mostRented || [];
-  const leastRentedData = reports.leastRented || [];
+  // Combine and deduplicate by _id (or name if _id missing)
+  const allVehicles = [
+    ...(reports.mostRented || []),
+    ...(reports.leastRented || [])
+  ];
+  const uniqueVehicles = allVehicles.filter((veh, idx, arr) =>
+    idx === arr.findIndex(v =>
+      veh._id ? v._id === veh._id : v.name === veh.name
+    )
+  );
 
   return generateReportPDF({
     title: "Vehicle Rental Report",
     subtitle: "Most & Least Rented Vehicles Analysis",
-    data: [...mostRentedData, ...leastRentedData],
+    data: uniqueVehicles,
     stats,
     filename: `vehicle-rental-report-${Date.now()}.pdf`
   });
@@ -690,14 +698,22 @@ export async function generateTourPackageReportPDF(reportData) {
     { label: "Avg Booking Rate", value: `${reportData.avgBookingRate?.toFixed(1) || 0}%` }
   ];
 
-  const mostBookedData = reportData.mostBooked || [];
-  const leastBookedData = reportData.leastBooked || [];
-  const topRevenueData = reportData.topRevenue || [];
+  // Combine and deduplicate by _id (or name if _id missing)
+  const allPackages = [
+    ...(reportData.mostBooked || []),
+    ...(reportData.leastBooked || []),
+    ...(reportData.topRevenue || [])
+  ];
+  const uniquePackages = allPackages.filter((pkg, idx, arr) =>
+    idx === arr.findIndex(p =>
+      pkg._id ? p._id === pkg._id : p.name === pkg.name
+    )
+  );
 
   return generateReportPDF({
     title: "Tour Package Report",
     subtitle: "Most & Least Booked Packages Analysis",
-    data: [...mostBookedData, ...leastBookedData, ...topRevenueData],
+    data: uniquePackages,
     stats,
     filename: `tour-package-report-${Date.now()}.pdf`
   });
@@ -758,13 +774,21 @@ export async function generateAccommodationReportPDF(reportData) {
     { label: "Avg Occupancy", value: `${reportData.avgOccupancy?.toFixed(1) || 0} nights` }
   ];
 
-  const mostBookedData = reportData.mostBooked || [];
-  const leastBookedData = reportData.leastBooked || [];
+  // Combine and deduplicate by _id (or name if _id missing)
+  const allProperties = [
+    ...(reportData.mostBooked || []),
+    ...(reportData.leastBooked || [])
+  ];
+  const uniqueProperties = allProperties.filter((prop, idx, arr) =>
+    idx === arr.findIndex(p =>
+      prop._id ? p._id === prop._id : p.name === prop.name
+    )
+  );
 
   return generateReportPDF({
     title: "Accommodation Report",
     subtitle: "Most & Least Booked Properties Analysis",
-    data: [...mostBookedData, ...leastBookedData],
+    data: uniqueProperties,
     stats,
     filename: `accommodation-report-${Date.now()}.pdf`
   });
@@ -819,14 +843,22 @@ export async function generateInventoryReportPDF(reportData) {
     { label: "Expiring Soon", value: reportData.expiringSoon || 0 }
   ];
 
-  const fastestMovingData = reportData.fastestMoving || [];
-  const mostOutOfStockData = reportData.mostOutOfStock || [];
-  const soonestToExpireData = reportData.soonestToExpire || [];
+  // Combine and deduplicate by _id (or name if _id missing)
+  const allItems = [
+    ...(reportData.fastestMoving || []),
+    ...(reportData.mostOutOfStock || []),
+    ...(reportData.soonestToExpire || [])
+  ];
+  const uniqueItems = allItems.filter((item, idx, arr) =>
+    idx === arr.findIndex(i =>
+      item._id ? i._id === item._id : i.name === item.name
+    )
+  );
 
   return generateReportPDF({
     title: "Inventory Management Report",
     subtitle: "Fastest Moving & Stock Analysis",
-    data: [...fastestMovingData, ...mostOutOfStockData, ...soonestToExpireData],
+    data: uniqueItems,
     stats,
     filename: `inventory-management-report-${Date.now()}.pdf`
   });
@@ -859,13 +891,21 @@ export async function generateFinanceReportPDF(reportData) {
     { label: "Profit Margin", value: `${reportData.profitMargin?.toFixed(1) || 0}%` }
   ];
 
-  const topRevenueData = reportData.topRevenueProducts || [];
-  const lowestRevenueData = reportData.lowestRevenueProducts || [];
+  // Combine and deduplicate by _id (or name if _id missing)
+  const allProducts = [
+    ...(reportData.topRevenueProducts || []),
+    ...(reportData.lowestRevenueProducts || [])
+  ];
+  const uniqueProducts = allProducts.filter((prod, idx, arr) =>
+    idx === arr.findIndex(p =>
+      prod._id ? p._id === prod._id : p.name === prod.name
+    )
+  );
 
   return generateReportPDF({
     title: "Financial Performance Report",
     subtitle: "Revenue & Profit Analysis",
-    data: [...topRevenueData, ...lowestRevenueData],
+    data: uniqueProducts,
     stats,
     filename: `financial-performance-report-${Date.now()}.pdf`
   });
@@ -877,13 +917,24 @@ export async function generateBookingReportPDF(reportData) {
     { label: "Total Revenue", value: formatMoney(reportData.totalRevenue || 0) }
   ];
 
-  const busiestDatesData = reportData.busiestDates || [];
-  const quietestDatesData = reportData.quietestDates || [];
+  // Combine all booking arrays (add other arrays if needed)
+  const allBookings = [
+    ...(reportData.allBookings || []),
+    ...(reportData.busiestDates || []),
+    ...(reportData.quietestDates || [])
+  ];
+
+  // Remove duplicates by _id (or date if _id missing)
+  const uniqueBookings = allBookings.filter((booking, index, self) =>
+    index === self.findIndex(b =>
+      booking._id ? b._id === booking._id : b.date === booking.date
+    )
+  );
 
   return generateReportPDF({
     title: "Booking Analytics Report",
-    subtitle: "Busiest & Quietest Travel Dates Analysis",
-    data: [...busiestDatesData, ...quietestDatesData],
+    subtitle: "All Bookings (No Duplicates)",
+    data: uniqueBookings,
     stats,
     filename: `booking-analytics-report-${Date.now()}.pdf`
   });
