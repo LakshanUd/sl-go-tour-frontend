@@ -226,12 +226,6 @@ export default function BlogsReportPage() {
             icon={BarChart3}
             color="purple"
           />
-          <StatCard
-            title="Published Posts"
-            value={reports.publishedPosts || 0}
-            icon={Calendar}
-            color="red"
-          />
         </div>
 
         {/* Reports Grid */}

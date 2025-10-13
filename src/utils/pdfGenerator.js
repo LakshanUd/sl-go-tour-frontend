@@ -723,8 +723,7 @@ export async function generateBlogReportPDF(reportData) {
   const stats = [
     { label: "Total Posts", value: reportData.totalPosts || 0 },
     { label: "Total Views", value: reportData.totalViews || 0 },
-    { label: "Avg Views", value: reportData.avgViews?.toFixed(1) || 0 },
-    { label: "Published Posts", value: reportData.publishedPosts || 0 }
+    { label: "Avg Views", value: reportData.avgViews?.toFixed(1) || 0 }
   ];
 
   // Combine all blog data and sort by view count (descending)
