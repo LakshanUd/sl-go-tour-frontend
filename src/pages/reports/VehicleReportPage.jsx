@@ -4,6 +4,7 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import {
   BarChart3,
+  RefreshCcw,
   TrendingUp,
   TrendingDown,
   Car,
@@ -186,7 +187,7 @@ export default function VehicleReportPage() {
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
           >
-            <BarChart3 className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button

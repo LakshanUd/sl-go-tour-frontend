@@ -10,6 +10,7 @@ import {
   DollarSign,
   Download,
   BarChart3,
+  RefreshCcw,
   Calendar,
   Star,
 } from "lucide-react";
@@ -185,7 +186,7 @@ export default function AccommodationReportPage() {
                 onClick={loadReports}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-700 font-medium hover:bg-neutral-50"
               >
-                <BarChart3 className="h-4 w-4" />
+                <RefreshCcw className="h-4 w-4" />
                 Refresh Reports
               </button>
               <button
