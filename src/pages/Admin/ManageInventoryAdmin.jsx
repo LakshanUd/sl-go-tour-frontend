@@ -22,6 +22,7 @@ import {
   AlertCircle,
   UserCog,
   Trash2,
+  Plus,
   Bot,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -152,7 +153,10 @@ function pushActivity(entry) {
   localStorage.setItem(ACTIVITY_KEY, JSON.stringify(next));
   return next;
 }
-
+// Helper to get today's date in yyyy-mm-dd
+function getTodayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 /* ---------- component ---------- */
 export default function ManageInventoryAdmin() {
   const [rows, setRows] = useState([]);
@@ -217,7 +221,7 @@ export default function ManageInventoryAdmin() {
     location: "Main Warehouse",
     quantity: "",
     unitCost: "",
-    purchaseDate: new Date().toISOString().slice(0, 10),
+    purchaseDate: getTodayISO(), // always today
     expiryDate: "",
   });
   const [submittingStock, setSubmittingStock] = useState(false);
@@ -415,6 +419,16 @@ export default function ManageInventoryAdmin() {
 
   /* ---------- Add Stock actions ---------- */
   function onChangeAddStock(field, value) {
+    // Prevent purchaseDate from being set to a past date
+    if (field === "purchaseDate") {
+      const today = getTodayISO();
+      if (value < today) value = today;
+    }
+    // Prevent expiryDate from being set to a past date
+    if (field === "expiryDate" && value) {
+      const today = getTodayISO();
+      if (value < today) value = today;
+    }
     setAddStockForm(prev => ({ ...prev, [field]: value }));
   }
 
@@ -635,7 +649,7 @@ export default function ManageInventoryAdmin() {
                   onClick={() => setShowAddStockModal(true)}
                   className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white ${GRAD_BG} hover:opacity-90 transition-opacity`}
                 >
-                  <Boxes className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                   Add Stock
                 </button>
               )}
@@ -1148,6 +1162,8 @@ export default function ManageInventoryAdmin() {
                         value={addStockForm.purchaseDate}
                         onChange={(e) => onChangeAddStock("purchaseDate", e.target.value)}
                         className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                        min={getTodayISO()} // cannot select past date
+                        disabled // make purchase date always today and not editable
                       />
                     </div>
 
@@ -1160,6 +1176,7 @@ export default function ManageInventoryAdmin() {
                         value={addStockForm.expiryDate}
                         onChange={(e) => onChangeAddStock("expiryDate", e.target.value)}
                         className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                        min={getTodayISO()} // cannot select past date
                       />
                     </div>
                   </div>
