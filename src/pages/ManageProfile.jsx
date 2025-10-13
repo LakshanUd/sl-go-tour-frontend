@@ -388,29 +388,11 @@ export default function ManageProfile() {
               </div>
             )}
 
-            {/* 04. Reports */}
-            <AccordionHeader
-              title="Reports"
-              isOpen={open.reports}
-              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
-            />
-            {open.reports && (
-              <div className="px-3 pb-2">
-                <RailLink
-                  to="/admin/reports"
-                  icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}
-                >
-                  <span className="whitespace-nowrap">All Reports</span>
-                </RailLink>
-              </div>
-            )}
-
-            {/* 05. Account Settings */}
+            {/* 04. Account Settings */}
             <AccordionHeader
               title="Account Settings"
-              isOpen={open.account}
-              onToggle={() => setOpen((s) => ({ ...s, account: !s.account }))}
-              last
+              isOpen={open.reports}
+              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
             />
             {open.account && (
               <div className="px-3 pb-3">

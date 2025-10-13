@@ -173,7 +173,7 @@ export default function FinancialManageAdmin() {
   }, [open]);
 
   /* Tabs (Incomes | Expenses | Overall Summary | Other) */
-  const [tab, setTab] = useState("Incomes");
+  const [tab, setTab] = useState("Overall Summary");
 
   /* Filters/search (no charts/summaries/date-range) */
   const [q, setQ] = useState(localStorage.getItem("fin_q") || "");
@@ -610,14 +610,14 @@ export default function FinancialManageAdmin() {
           {/* Top tabs (Incomes | Expenses | Overall Summary | Other) */}
           <div className={`${CARD} p-3`}>
             <div className="flex flex-wrap gap-2">
+              <TopTab active={tab === "Overall Summary"} onClick={() => setTab("Overall Summary")}>
+                Overall Summary
+              </TopTab>
               <TopTab active={tab === "Incomes"} onClick={() => setTab("Incomes")}>
                 Incomes
               </TopTab>
               <TopTab active={tab === "Expenses"} onClick={() => setTab("Expenses")}>
                 Expenses
-              </TopTab>
-              <TopTab active={tab === "Overall Summary"} onClick={() => setTab("Overall Summary")}>
-                Overall Summary
               </TopTab>
               <TopTab active={tab === "Other"} onClick={() => setTab("Other")}>
                 Other

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { ArrowLeft, CalendarDays, User, Tag, Clock, Share2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, User, Tag, Clock, Share2, Eye } from "lucide-react";
 
 /* gradient tokens */
 const gradFrom = "from-[#09E65A]";
@@ -29,6 +29,7 @@ function normalize(b = {}) {
     image: b.image || "",
     publishedDate: b.publishedDate ? new Date(b.publishedDate) : null,
     createdAt: b.createdAt ? new Date(b.createdAt) : null,
+    viewCount: b.viewCount || 0,
   };
 }
 
@@ -54,13 +55,35 @@ export default function BlogView() {
     throw new Error("Blog not found");
   }
 
+  async function incrementViewCount() {
+    try {
+      // Try both possible endpoints for view increment
+      const endpoints = [`/api/blogs/${id}/view`, `/blogs/${id}/view`];
+      for (const ep of endpoints) {
+        try {
+          await api.post(ep);
+          break; // Success, no need to try other endpoints
+        } catch {
+          /* try next */
+        }
+      }
+    } catch (error) {
+      // Silently fail - view count increment shouldn't break the user experience
+      console.warn("Failed to increment view count:", error);
+    }
+  }
+
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
         setLoading(true);
         const b = await fetchOne();
-        if (alive) setBlog(b);
+        if (alive) {
+          setBlog(b);
+          // Increment view count after successfully loading the blog
+          await incrementViewCount();
+        }
       } catch (e) {
         toast.error(e?.response?.data?.message || e?.message || "Failed to load blog");
       } finally {
@@ -121,6 +144,9 @@ export default function BlogView() {
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5" /> {readingMins} min read
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="h-3.5 w-3.5" /> {blog.viewCount} views
                   </span>
                 </div>
 

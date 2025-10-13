@@ -100,6 +100,338 @@ function validateAndCleanData(data) {
   });
 }
 
+/* ---------- Custom User PDF Generator ---------- */
+export async function generateUserReportPDFCustom({
+  title,
+  subtitle,
+  countries,
+  stats,
+  filename,
+}) {
+  try {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    let logoDataUrl = null;
+    try {
+      const logoUrl = await loadLogoAsDataUrl();
+      if (logoUrl) {
+        logoDataUrl = await createImageFromSvg(logoUrl, 120, 40);
+      }
+    } catch (error) {
+      console.warn("Could not process logo:", error);
+    }
+
+    /* ---------- Header Section ---------- */
+    doc.setFillColor(...PRIMARY_COLOR);
+    doc.rect(0, 0, pageWidth, 70, "F");
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, "PNG", 36, 18, 120, 40);
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255);
+    doc.text(title, pageWidth - 36, 35, { align: "right" });
+
+    if (subtitle) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(subtitle, pageWidth - 36, 52, { align: "right" });
+    }
+
+    doc.setFontSize(9);
+    doc.setTextColor(245, 245, 245);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - 36, 65, {
+      align: "right",
+    });
+
+    let currentY = 95;
+
+    /* ---------- Statistics Cards ---------- */
+    if (stats && stats.length > 0) {
+      const cardWidth = (pageWidth - 72 - 16) / 2;
+      const cardHeight = 70;
+
+      stats.forEach((stat, index) => {
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        const x = 36 + col * (cardWidth + 16);
+        const y = currentY + row * (cardHeight + 12);
+
+        // Shadowed card
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(...BORDER_COLOR);
+        doc.roundedRect(x, y, cardWidth, cardHeight, 10, 10, "FD");
+
+        // Stat label
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...LIGHT_TEXT_COLOR);
+        doc.text(stat.label, x + 14, y + 22);
+
+        // Stat value
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(...PRIMARY_COLOR);
+        doc.text(String(stat.value), x + 14, y + 42);
+
+        // Subtitle (optional)
+        if (stat.subtitle) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(...LIGHT_TEXT_COLOR);
+          doc.text(stat.subtitle, x + 14, y + 56);
+        }
+      });
+
+      const statsRows = Math.ceil(stats.length / 2);
+      currentY += statsRows * (cardHeight + 12) + 20;
+    }
+
+    /* ---------- Countries Table Section ---------- */
+    if (countries && countries.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(...TEXT_COLOR);
+      doc.text("Top Countries by New Users", 36, currentY);
+      currentY += 16;
+
+      // Prepare table data with Country, User count, and Percentage
+      const tableData = countries.map((country, index) => [
+        String(index + 1),
+        String(country.country || "Unknown"),
+        String(country.count || 0),
+        `${country.percentage || 0}%`
+      ]);
+
+      const headers = ["#", "Country", "User Count", "Percentage"];
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [headers],
+        body: tableData,
+        theme: "grid",
+        headStyles: {
+          fillColor: PRIMARY_COLOR,
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 9,
+          textColor: TEXT_COLOR,
+          cellPadding: 6,
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251],
+        },
+        styles: {
+          lineColor: BORDER_COLOR,
+        },
+        columnStyles: {
+          0: { cellWidth: 30 },  // # column
+          1: { cellWidth: 150 }, // Country column
+          2: { cellWidth: 80 },  // User Count column
+          3: { cellWidth: 80 }   // Percentage column
+        },
+        margin: { left: 36, right: 36 },
+        didDrawPage: (data) => {
+          doc.setFontSize(8);
+          doc.setTextColor(...LIGHT_TEXT_COLOR);
+          doc.text(`Generated ${new Date().toLocaleString()}`, 36, pageHeight - 20);
+          doc.text(`Page ${data.pageNumber}`, pageWidth - 36, pageHeight - 20, {
+            align: "right",
+          });
+        },
+      });
+    }
+
+    const finalFilename =
+      filename ||
+      `${title.toLowerCase().replace(/\s+/g, "-")}-report-${Date.now()}.pdf`;
+    doc.save(finalFilename);
+
+    return true;
+  } catch (error) {
+    console.error("User PDF generation failed:", error);
+    if (error.message?.includes("Type of text must be string")) {
+      throw new Error(
+        "PDF generation failed: Invalid data type detected. Please ensure all data is properly formatted."
+      );
+    }
+    throw new Error("Failed to generate user PDF report");
+  }
+}
+
+/* ---------- Custom Blog PDF Generator ---------- */
+export async function generateBlogReportPDFCustom({
+  title,
+  subtitle,
+  blogs,
+  stats,
+  filename,
+}) {
+  try {
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    let logoDataUrl = null;
+    try {
+      const logoUrl = await loadLogoAsDataUrl();
+      if (logoUrl) {
+        logoDataUrl = await createImageFromSvg(logoUrl, 120, 40);
+      }
+    } catch (error) {
+      console.warn("Could not process logo:", error);
+    }
+
+    /* ---------- Header Section ---------- */
+    doc.setFillColor(...PRIMARY_COLOR);
+    doc.rect(0, 0, pageWidth, 70, "F");
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, "PNG", 36, 18, 120, 40);
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(255, 255, 255);
+    doc.text(title, pageWidth - 36, 35, { align: "right" });
+
+    if (subtitle) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(subtitle, pageWidth - 36, 52, { align: "right" });
+    }
+
+    doc.setFontSize(9);
+    doc.setTextColor(245, 245, 245);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth - 36, 65, {
+      align: "right",
+    });
+
+    let currentY = 95;
+
+    /* ---------- Statistics Cards ---------- */
+    if (stats && stats.length > 0) {
+      const cardWidth = (pageWidth - 72 - 16) / 2;
+      const cardHeight = 70;
+
+      stats.forEach((stat, index) => {
+        const row = Math.floor(index / 2);
+        const col = index % 2;
+        const x = 36 + col * (cardWidth + 16);
+        const y = currentY + row * (cardHeight + 12);
+
+        // Shadowed card
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(...BORDER_COLOR);
+        doc.roundedRect(x, y, cardWidth, cardHeight, 10, 10, "FD");
+
+        // Stat label
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.setTextColor(...LIGHT_TEXT_COLOR);
+        doc.text(stat.label, x + 14, y + 22);
+
+        // Stat value
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.setTextColor(...PRIMARY_COLOR);
+        doc.text(String(stat.value), x + 14, y + 42);
+
+        // Subtitle (optional)
+        if (stat.subtitle) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(...LIGHT_TEXT_COLOR);
+          doc.text(stat.subtitle, x + 14, y + 56);
+        }
+      });
+
+      const statsRows = Math.ceil(stats.length / 2);
+      currentY += statsRows * (cardHeight + 12) + 20;
+    }
+
+    /* ---------- Blog Table Section ---------- */
+    if (blogs && blogs.length > 0) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.setTextColor(...TEXT_COLOR);
+      doc.text("Blog Posts by View Count", 36, currentY);
+      currentY += 16;
+
+      // Prepare table data with only title, author, and view count
+      const tableData = blogs.map((blog, index) => [
+        String(index + 1),
+        String(blog.title || "Untitled"),
+        String(blog.author || "Unknown"),
+        String(blog.viewCount || 0)
+      ]);
+
+      const headers = ["#", "Title", "Author", "View Count"];
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [headers],
+        body: tableData,
+        theme: "grid",
+        headStyles: {
+          fillColor: PRIMARY_COLOR,
+          textColor: [255, 255, 255],
+          fontSize: 10,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 9,
+          textColor: TEXT_COLOR,
+          cellPadding: 6,
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251],
+        },
+        styles: {
+          lineColor: BORDER_COLOR,
+        },
+        columnStyles: {
+          0: { cellWidth: 30 },  // # column
+          1: { cellWidth: 200 }, // Title column
+          2: { cellWidth: 100 }, // Author column
+          3: { cellWidth: 80 }   // View Count column
+        },
+        margin: { left: 36, right: 36 },
+        didDrawPage: (data) => {
+          doc.setFontSize(8);
+          doc.setTextColor(...LIGHT_TEXT_COLOR);
+          doc.text(`Generated ${new Date().toLocaleString()}`, 36, pageHeight - 20);
+          doc.text(`Page ${data.pageNumber}`, pageWidth - 36, pageHeight - 20, {
+            align: "right",
+          });
+        },
+      });
+    }
+
+    const finalFilename =
+      filename ||
+      `${title.toLowerCase().replace(/\s+/g, "-")}-report-${Date.now()}.pdf`;
+    doc.save(finalFilename);
+
+    return true;
+  } catch (error) {
+    console.error("Blog PDF generation failed:", error);
+    if (error.message?.includes("Type of text must be string")) {
+      throw new Error(
+        "PDF generation failed: Invalid data type detected. Please ensure all data is properly formatted."
+      );
+    }
+    throw new Error("Failed to generate blog PDF report");
+  }
+}
+
 /* ---------- Main PDF Generator ---------- */
 export async function generateReportPDF({
   title,
@@ -379,13 +711,20 @@ export async function generateBlogReportPDF(reportData) {
     { label: "Published Posts", value: reportData.publishedPosts || 0 }
   ];
 
-  const mostReadData = reportData.mostRead || [];
-  const leastReadData = reportData.leastRead || [];
+  // Combine all blog data and sort by view count (descending)
+  const allBlogs = [...(reportData.mostRead || []), ...(reportData.leastRead || [])];
+  
+  // Remove duplicates and sort by view count descending
+  const uniqueBlogs = allBlogs.filter((blog, index, self) => 
+    index === self.findIndex(b => b._id === blog._id)
+  );
+  
+  const sortedBlogs = uniqueBlogs.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
 
-  return generateReportPDF({
+  return generateBlogReportPDFCustom({
     title: "Blog Performance Report",
-    subtitle: "Most & Least Read Posts Analysis",
-    data: [...mostReadData, ...leastReadData],
+    subtitle: "Blog Posts Sorted by View Count",
+    blogs: sortedBlogs,
     stats,
     filename: `blog-performance-report-${Date.now()}.pdf`
   });
@@ -500,41 +839,15 @@ export async function generateUserReportPDF(reportData) {
     { label: "Growth Rate", value: `${reportData.growthRate?.toFixed(1) || 0}%` }
   ];
 
-  // Prepare table data for Top Countries by New Users
-  const topCountriesData = Array.isArray(reportData.topCountries)
-    ? reportData.topCountries.map((c, idx) => {
-        const userCount = c.userCount || c.count || 0;
-        let percentage = "0%";
-        if (typeof c.percentage === "number") {
-          percentage = `${c.percentage.toFixed(1)}%`;
-        } else if (typeof c.percentage === "string") {
-          percentage = c.percentage;
-        } else if (reportData.newUsersThisMonth) {
-          percentage = `${((userCount / reportData.newUsersThisMonth) * 100).toFixed(1)}%`;
-        }
-        return {
-          country: c.country || c.name || "—",
-          userCount,
-          percentage
-        };
-      })
-    : [];
+  // Get top countries data (already sorted by count in descending order from API)
+  const topCountries = reportData.topCountries || [];
 
-  // Custom headers and rows for the table
-  const headers = ["Country", "User count", "Percentage"];
-  const tableData = topCountriesData.map(c => [
-    c.country,
-    String(c.userCount),
-    c.percentage
-  ]);
-
-  return generateReportPDF({
+  return generateUserReportPDFCustom({
     title: "User Analytics Report",
     subtitle: "Top Countries by New Users",
-    data: tableData,
+    countries: topCountries,
     stats,
-    filename: `user-analytics-report-${Date.now()}.pdf`,
-    customTable: { headers }
+    filename: `user-analytics-report-${Date.now()}.pdf`
   });
 }
 

@@ -570,22 +570,22 @@ export default function ManageChatbot() {
               </div>
             )}
 
-            {/* 04. Profile */}
-                        <AccordionHeader
-                          title="Account Settings"
-                          isOpen={open.reports}
-                          onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
-                        />
-                        {open.account && (
-                          <div className="px-3 pb-3">
-                            <RailLink
-                              to="/profile/settings"
-                              icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
-                            >
-                              <span className="whitespace-nowrap">Profile Settings</span>
-                            </RailLink>
-                          </div>
-                        )}
+            {/* 04. Reports */}
+            <AccordionHeader
+              title="Account Settings"
+              isOpen={open.reports}
+              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
+            />
+            {open.account && (
+              <div className="px-3 pb-3">
+                <RailLink
+                  to="/profile/settings"
+                  icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Profile Settings</span>
+                </RailLink>
+              </div>
+            )}
           </div>
         </aside>
 

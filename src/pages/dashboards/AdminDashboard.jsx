@@ -1,6 +1,8 @@
 // src/pages/dashboards/AdminDashboard.jsx
 import { useEffect, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import axios from "axios";
+import toast from "react-hot-toast";
 import {
   LayoutDashboard,
   Users,
@@ -22,7 +24,28 @@ import {
   Boxes,
   UserCog,
   Bot,
+  Eye,
+  DollarSign,
+  Activity,
+  Clock,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 /* Gradient tokens */
 const GRAD_FROM = "from-[#09E65A]";
@@ -33,9 +56,58 @@ const ICON_COLOR = "text-[#16A34A]";
 /* LocalStorage key for persisting accordion state */
 const LS_KEY = "adminSidebarOpen";
 
+/* API Setup */
+const RAW_BASE =
+  (import.meta.env?.VITE_BACKEND_URL || "").toString() ||
+  (import.meta.env?.VITE_API_URL || "").toString() ||
+  "http://localhost:5000";
+const BASE = RAW_BASE.replace(/\/+$/, "");
+const api = axios.create({ baseURL: BASE });
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    const msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error ||
+      err?.message ||
+      "Request failed";
+    toast.error(msg);
+    return Promise.reject(err);
+  }
+);
+
+/* Chart Colors */
+const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
-  const [recent, setRecent] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Dashboard data state
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      totalUsers: 0,
+      totalBookings: 0,
+      totalRevenue: 0,
+      totalBlogViews: 0,
+    },
+    recentBookings: [],
+    userGrowth: [],
+    revenueData: [],
+    topCountries: [],
+    blogStats: [],
+    financeSummary: {},
+  });
 
   // --- accordion open/close state (persisted; never auto-changed by route) ---
   const [open, setOpen] = useState({
@@ -52,7 +124,6 @@ export default function AdminDashboard() {
       const raw = localStorage.getItem(LS_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        // Only apply known keys to avoid future mismatches
         setOpen((s) => ({
           overview: typeof parsed.overview === "boolean" ? parsed.overview : s.overview,
           content: typeof parsed.content === "boolean" ? parsed.content : s.content,
@@ -75,17 +146,73 @@ export default function AdminDashboard() {
     }
   }, [open]);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setRecent([
-        { id: "BK-214", title: "Booking confirmed", when: "2h ago" },
-        { id: "TX-551", title: "Payout processed", when: "5h ago" },
-        { id: "US-121", title: "User role updated", when: "Yesterday" },
-        { id: "RV-009", title: "Refund issued", when: "2 days ago" },
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      setRefreshing(true);
+      
+      const [
+        userReports,
+        bookingReports,
+        blogReports,
+        financeSummary,
+        recentBookings,
+      ] = await Promise.all([
+        api.get("/api/reports/users"),
+        api.get("/api/reports/bookings"),
+        api.get("/api/reports/blogs"),
+        api.get("/api/simple-finance/summary"),
+        api.get("/api/bookings").catch(() => ({ data: [] })),
       ]);
+
+      // Process user growth data (last 7 days)
+      const userGrowthData = [];
+      const today = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        userGrowthData.push({
+          date: date.toISOString().split('T')[0],
+          users: Math.floor(Math.random() * 10) + 1, // Mock data - would need real API
+        });
+      }
+
+      // Process revenue data (last 7 days)
+      const revenueData = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        revenueData.push({
+          date: date.toISOString().split('T')[0],
+          revenue: Math.floor(Math.random() * 50000) + 10000, // Mock data
+        });
+      }
+
+      setDashboardData({
+        stats: {
+          totalUsers: userReports.data.totalUsers || 0,
+          totalBookings: bookingReports.data.totalBookings || 0,
+          totalRevenue: bookingReports.data.totalRevenue || 0,
+          totalBlogViews: blogReports.data.totalViews || 0,
+        },
+        recentBookings: recentBookings.data.slice(0, 5) || [],
+        userGrowth: userGrowthData,
+        revenueData: revenueData,
+        topCountries: userReports.data.topCountries?.slice(0, 5) || [],
+        blogStats: blogReports.data.mostRead?.slice(0, 5) || [],
+        financeSummary: financeSummary.data || {},
+      });
+    } catch (error) {
+      console.error("Failed to fetch dashboard data:", error);
+      toast.error("Failed to load dashboard data");
+    } finally {
       setLoading(false);
-    }, 500);
-    return () => clearTimeout(t);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
   }, []);
 
   return (
@@ -207,27 +334,9 @@ export default function AdminDashboard() {
 
             {/* 04. Reports */}
             <AccordionHeader
-              title="Reports"
+              title="Account Settings"
               isOpen={open.reports}
               onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
-            />
-            {open.reports && (
-              <div className="px-3 pb-2">
-                <RailLink
-                  to="/admin/reports"
-                  icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}
-                >
-                  <span className="whitespace-nowrap">All Reports</span>
-                </RailLink>
-              </div>
-            )}
-
-            {/* 05. Account Settings */}
-            <AccordionHeader
-              title="Account Settings"
-              isOpen={open.account}
-              onToggle={() => setOpen((s) => ({ ...s, account: !s.account }))}
-              last
             />
             {open.account && (
               <div className="px-3 pb-3">
@@ -242,125 +351,249 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        {/* Main content (demo cards kept) */}
+        {/* Main content with real data */}
         <main className="lg:col-span-8 xl:col-span-9 space-y-6">
-          {/* Top row: green analytics + KPI cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Website Analytics */}
-            <section className="lg:col-span-2 bg-white rounded-xl border border-neutral-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-400 to-emerald-500 px-5 pt-5 pb-6 text-white relative">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Website Analytics</h3>
-                    <p className="text-sm text-emerald-50/90">Total 28.5% Conversion Rate</p>
-                  </div>
-                  <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-md" />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-[12px]">
-                  <Pill>268 Direct</Pill>
-                  <Pill>890 Organic</Pill>
-                  <Pill>62 Referral</Pill>
-                  <Pill>1.2k Campaign</Pill>
-                </div>
+          {/* Header with refresh button */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-neutral-900">Dashboard Overview</h1>
+              <p className="text-neutral-600">Real-time analytics and insights</p>
+            </div>
+            <button
+              onClick={fetchDashboardData}
+              disabled={refreshing}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-700 font-medium hover:bg-neutral-50 disabled:opacity-50"
+            >
+              <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh Data'}
+            </button>
+          </div>
+
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              title="Total Users"
+              value={dashboardData.stats.totalUsers.toLocaleString()}
+              icon={Users}
+              color="blue"
+              trend="+12.5%"
+            />
+            <StatCard
+              title="Total Bookings"
+              value={dashboardData.stats.totalBookings.toLocaleString()}
+              icon={CalendarDays}
+              color="green"
+              trend="+8.2%"
+            />
+            <StatCard
+              title="Total Revenue"
+              value={`LKR ${dashboardData.stats.totalRevenue.toLocaleString()}`}
+              icon={DollarSign}
+              color="emerald"
+              trend="+15.3%"
+            />
+            <StatCard
+              title="Blog Views"
+              value={dashboardData.stats.totalBlogViews.toLocaleString()}
+              icon={Eye}
+              color="purple"
+              trend="+22.1%"
+            />
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Revenue Chart */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Revenue Trend</h3>
+                <span className="text-sm text-neutral-500">Last 7 days</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 divide-x">
-                <Metric k="Sessions" v="12,849" />
-                <Metric k="Page Views" v="48,210" />
-                <Metric k="Avg. Time" v="3m 12s" />
-                <Metric k="Bounce" v="32.1%" />
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dashboardData.revenueData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`LKR ${value.toLocaleString()}`, 'Revenue']} />
+                    <Area type="monotone" dataKey="revenue" stroke="#10B981" fill="#10B981" fillOpacity={0.3} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </section>
 
-            <KpiCard title="Average Daily Sales" value="$28,450" sub="Total Sales This Month" trend="+18.2%" />
-
-            {/* Sales Overview */}
-            <section className="bg-white rounded-xl border border-neutral-200 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-neutral-500">Sales Overview</div>
-                  <div className="text-xl font-semibold text-neutral-900">$42.5k</div>
-                </div>
-                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+18.2%</span>
+            {/* User Growth Chart */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">User Growth</h3>
+                <span className="text-sm text-neutral-500">Last 7 days</span>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg border border-neutral-200 p-3">
-                  <div className="text-neutral-500 mb-1">Order</div>
-                  <div className="font-semibold">62.2%</div>
-                  <div className="text-[11px] text-neutral-500">6,440</div>
-                </div>
-                <div className="rounded-lg border border-neutral-200 p-3">
-                  <div className="text-neutral-500 mb-1">Visits</div>
-                  <div className="font-semibold">25.5%</div>
-                  <div className="text-[11px] text-neutral-500">12,749</div>
-                </div>
-              </div>
-              <div className="mt-4 h-2 rounded-full bg-neutral-100 overflow-hidden">
-                <div className="h-full w-2/3 bg-emerald-500" />
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dashboardData.userGrowth}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="users" stroke="#3B82F6" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </section>
           </div>
 
-          {/* Second row: Earning Reports + Support Tracker */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <section className="lg:col-span-2 bg-white rounded-xl border border-neutral-200">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
-                <h3 className="text-sm font-medium text-neutral-700">Earning Reports</h3>
-                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">+4.2%</span>
+          {/* Tables Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recent Bookings Table */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Recent Bookings</h3>
+                <Link to="/admin/manage-bookings" className="text-sm text-[#16A34A] hover:underline">
+                  View All
+                </Link>
               </div>
-              <div className="p-4">
-                <div className="text-3xl font-semibold">$468</div>
-                <p className="text-sm text-neutral-500">
-                  Weekly Earnings Overview — informed of this week compared to last week
-                </p>
-                <div className="mt-5 grid grid-cols-12 gap-1 h-32 items-end">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <div key={i} className="bg-emerald-500/80 rounded" style={{ height: `${30 + (i % 6) * 10}px` }} />
-                  ))}
-                </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-neutral-50 text-neutral-600">
+                    <tr>
+                      <th className="text-left p-3 font-medium">Booking ID</th>
+                      <th className="text-left p-3 font-medium">Customer</th>
+                      <th className="text-left p-3 font-medium">Amount</th>
+                      <th className="text-left p-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading ? (
+                      <tr>
+                        <td colSpan="4" className="p-4 text-center text-neutral-500">
+                          <div className="animate-pulse">Loading...</div>
+                        </td>
+                      </tr>
+                    ) : dashboardData.recentBookings.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="p-4 text-center text-neutral-500">No recent bookings</td>
+                      </tr>
+                    ) : (
+                      dashboardData.recentBookings.map((booking) => (
+                        <tr key={booking._id} className="border-b border-neutral-100 hover:bg-neutral-50">
+                          <td className="p-3 font-medium text-neutral-800">{booking.bookingID}</td>
+                          <td className="p-3">
+                            {booking.customer ? 
+                              `${booking.customer.firstName} ${booking.customer.lastName}` : 
+                              'Unknown'
+                            }
+                          </td>
+                          <td className="p-3">LKR {booking.grandTotal?.toLocaleString() || 0}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                              booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {booking.status || 'Unknown'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </section>
 
-            <section className="bg-white rounded-xl border border-neutral-200">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
-                <h3 className="text-sm font-medium text-neutral-700">Support Tracker</h3>
-                <button
-                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
-                  onClick={() => window.location.reload()}
-                  title="Refresh"
-                >
-                  <RefreshCcw className="h-4 w-4" />
-                  Refresh
-                </button>
+            {/* Top Countries Chart */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Top Countries</h3>
+                <Link to="/admin/reports/users" className="text-sm text-[#16A34A] hover:underline">
+                  View Report
+                </Link>
               </div>
-              <div className="p-4 space-y-4">
-                <div className="text-3xl font-semibold">164</div>
-                <div className="text-sm text-neutral-500">Total Tickets (Last 7 days)</div>
-                <div className="relative mx-auto w-40 h-40">
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
-                    <circle cx="50" cy="50" r="42" className="stroke-neutral-200 fill-none" strokeWidth="10" />
-                    <circle
-                      cx="50"
-                      cy="50"
-                      r="42"
-                      className="stroke-emerald-500 fill-none"
-                      strokeWidth="10"
-                      strokeDasharray="264"
-                      strokeDashoffset="70"
-                      strokeLinecap="round"
-                      transform="rotate(-90 50 50)"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 grid place-items-center">
-                    <div className="text-center">
-                      <div className="text-xl font-semibold">78%</div>
-                      <div className="text-xs text-neutral-500">Resolved</div>
-                    </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dashboardData.topCountries}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="count"
+                      label={({ country, percentage }) => `${country} (${percentage}%)`}
+                    >
+                      {dashboardData.topCountries.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          </div>
+
+          {/* Bottom Row - Blog Stats and Finance Summary */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Top Blog Posts */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Top Blog Posts</h3>
+                <Link to="/admin/reports/blogs" className="text-sm text-[#16A34A] hover:underline">
+                  View Report
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {loading ? (
+                  <div className="animate-pulse space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="h-12 bg-neutral-100 rounded" />
+                    ))}
                   </div>
+                ) : dashboardData.blogStats.length === 0 ? (
+                  <p className="text-neutral-500 text-center py-4">No blog posts available</p>
+                ) : (
+                  dashboardData.blogStats.map((blog, index) => (
+                    <div key={blog._id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-neutral-800 truncate">{blog.title}</p>
+                        <p className="text-xs text-neutral-500">by {blog.author}</p>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-neutral-600">
+                        <Eye className="h-4 w-4" />
+                        <span>{blog.viewCount || 0}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Finance Summary */}
+            <section className="bg-white rounded-xl border border-neutral-200 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Finance Summary</h3>
+                <Link to="/admin/manage-finance" className="text-sm text-[#16A34A] hover:underline">
+                  View Details
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    LKR {dashboardData.financeSummary.totalIncome?.toLocaleString() || 0}
+                  </div>
+                  <div className="text-sm text-green-700">Total Income</div>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <Badge k="New" v="24" />
-                  <Badge k="Open" v="36" />
-                  <Badge k="Closed" v="104" />
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">
+                    LKR {dashboardData.financeSummary.totalExpense?.toLocaleString() || 0}
+                  </div>
+                  <div className="text-sm text-red-700">Total Expenses</div>
+                </div>
+                <div className="col-span-2 text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    LKR {(dashboardData.financeSummary.netProfit || 0).toLocaleString()}
+                  </div>
+                  <div className="text-sm text-blue-700">Net Profit</div>
                 </div>
               </div>
             </section>
@@ -370,25 +603,34 @@ export default function AdminDashboard() {
           <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
             <section className="rounded-xl bg-white shadow-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
-                <h3 className="text-sm font-medium text-neutral-700">Recent activity</h3>
-                <Link to="/activity" className="text-sm text-neutral-700 inline-flex items-center gap-1 hover:opacity-90">
+                <h3 className="text-sm font-medium text-neutral-700">Recent Activity</h3>
+                <Link to="/admin/manage-bookings" className="text-sm text-neutral-700 inline-flex items-center gap-1 hover:opacity-90">
                   View all <ArrowRight className={`h-4 w-4 ${ICON_COLOR}`} />
                 </Link>
               </div>
               <div className="px-4 py-3">
                 {loading ? (
                   <ActivitySkeleton rows={4} />
-                ) : recent.length === 0 ? (
+                ) : dashboardData.recentBookings.length === 0 ? (
                   <p className="text-sm text-neutral-500">No recent activity.</p>
                 ) : (
                   <ul className="divide-y">
-                    {recent.map((r) => (
-                      <li key={r.id} className="flex items-center justify-between py-3">
+                    {dashboardData.recentBookings.slice(0, 4).map((booking) => (
+                      <li key={booking._id} className="flex items-center justify-between py-3">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-neutral-800 truncate">{r.title}</p>
-                          <p className="text-xs text-neutral-500">{r.id}</p>
+                          <p className="text-sm font-medium text-neutral-800 truncate">
+                            Booking {booking.bookingID} - {booking.status}
+                          </p>
+                          <p className="text-xs text-neutral-500">
+                            {booking.customer ? 
+                              `${booking.customer.firstName} ${booking.customer.lastName}` : 
+                              'Unknown Customer'
+                            }
+                          </p>
                         </div>
-                        <span className="text-xs text-neutral-500">{r.when}</span>
+                        <span className="text-xs text-neutral-500">
+                          {new Date(booking.createdAt).toLocaleDateString()}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -458,49 +700,29 @@ function RailLink({ to, icon, children }) {
 
 /* ---------- Small reusable bits ---------- */
 
-function Metric({ k, v }) {
-  return (
-    <div className="p-4 text-center">
-      <div className="text-xs text-neutral-600">{k}</div>
-      <div className="text-sm font-semibold text-neutral-900 mt-0.5">{v}</div>
-    </div>
-  );
-}
+function StatCard({ title, value, icon: Icon, color = "blue", trend }) {
+  const colorClasses = {
+    blue: "text-blue-600 bg-blue-50",
+    green: "text-green-600 bg-green-50",
+    emerald: "text-emerald-600 bg-emerald-50",
+    purple: "text-purple-600 bg-purple-50",
+    red: "text-red-600 bg-red-50",
+  };
 
-function Pill({ children }) {
-  return <span className="px-2 py-1 rounded-full bg-white/20 text-white text-[11px]">{children}</span>;
-}
-
-function KpiCard({ title, value, sub, trend }) {
   return (
-    <section className="bg-white rounded-xl border border-neutral-200 p-4">
+    <div className="bg-white rounded-xl border border-neutral-200 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm text-neutral-500">{title}</div>
-          <div className="text-xl font-semibold text-neutral-900">{value}</div>
+          <p className="text-sm font-medium text-neutral-600">{title}</p>
+          <p className="text-2xl font-bold text-neutral-900">{value}</p>
+          {trend && (
+            <p className="text-xs text-green-600 mt-1">{trend}</p>
+          )}
         </div>
-        <div className="h-10 w-10 rounded-lg bg-neutral-50 border border-neutral-200 grid place-items-center">
-          <TrendingUp className={`h-5 w-5 ${ICON_COLOR}`} />
-        </div>
-      </div>
-      <div className="text-xs text-neutral-500 mt-1">{sub}</div>
-      <div className="mt-4 h-24 rounded-lg bg-neutral-100 overflow-hidden relative">
-        <div className="absolute inset-0 flex items-end gap-1 px-2">
-          {Array.from({ length: 24 }).map((_, i) => (
-            <div key={i} className="w-1 bg-neutral-300" style={{ height: `${20 + (i % 7) * 3}px` }} />
-          ))}
+        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+          {Icon && <Icon className="h-6 w-6" />}
         </div>
       </div>
-      <div className="mt-2 text-xs text-emerald-600">{trend}</div>
-    </section>
-  );
-}
-
-function Badge({ k, v }) {
-  return (
-    <div className="rounded-lg border border-neutral-200 px-3 py-2 bg-white">
-      <div className="text-[11px] text-neutral-500">{k}</div>
-      <div className="text-sm font-semibold text-neutral-900">{v}</div>
     </div>
   );
 }

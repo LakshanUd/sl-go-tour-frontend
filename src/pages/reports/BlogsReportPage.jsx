@@ -132,7 +132,7 @@ export default function BlogsReportPage() {
               {data.map((item, idx) => (
                 <tr key={idx} className="border-b border-neutral-100 hover:bg-neutral-50">
                   <td className="p-3 font-medium text-neutral-800">{item.title}</td>
-                  <td className="p-3">{item.views || item.pageviews || 0}</td>
+                  <td className="p-3">{item.viewCount || 0}</td>
                   <td className="p-3">{item.author || "—"}</td>
                   <td className="p-3">{item.category || "—"}</td>
                   <td className="p-3">

@@ -22,6 +22,7 @@ import {
   AlertCircle,
   UserCog,
   Trash2,
+  Bot,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { confirmToast } from "../../components/ConfirmToast";
@@ -566,6 +567,12 @@ export default function ManageInventoryAdmin() {
                 </RailLink>
                 <RailLink to="/admin/manage-inventory" icon={<Boxes className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-chatbot"
+                  icon={<Bot className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Manage Chatbot</span>
                 </RailLink>
               </div>
             )}
