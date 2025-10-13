@@ -1,5 +1,5 @@
 // src/pages/CustomerMeals.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { ShoppingCart, Eye, Search, BadgeCheck } from "lucide-react";
@@ -50,6 +50,12 @@ export default function CustomerMeals() {
 
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(null);
+
+  // Booking modal state
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingMeal, setBookingMeal] = useState(null);
+  const [bookingQty, setBookingQty] = useState(1);
+  const bookingQtyRef = useRef();
 
   async function fetchMeals() {
     // First try /api/meals, then /meals (some codebases mount differently)
@@ -107,27 +113,40 @@ export default function CustomerMeals() {
     setOpen(true);
   };
 
-  async function addMealToCart(meal) {
-    if (!meal?.avalability) {
+  function openBookingModal(meal) {
+    setBookingMeal(meal);
+    setBookingQty(1);
+    setShowBookingModal(true);
+    setTimeout(() => bookingQtyRef.current?.focus(), 100);
+  }
+
+  async function addMealToCartWithQty() {
+    if (!bookingMeal?.avalability) {
       toast.error("This item is unavailable");
+      return;
+    }
+    if (!bookingQty || bookingQty < 1) {
+      toast.error("Please enter a valid quantity.");
       return;
     }
     try {
       await CartAPI.addItem({
         serviceType: "Meal",
-        refId: meal._id,                     // mongo _id ref
-        name: meal.name || "Meal",
-        image: meal.image || "",
-        code: meal.catogery || "",           // optional code / descriptor
-        unitPrice: Number(meal.price || 0),
+        refId: bookingMeal._id,
+        name: bookingMeal.name || "Meal",
+        image: bookingMeal.image || "",
+        code: bookingMeal.catogery || "",
+        unitPrice: Number(bookingMeal.price || 0),
         currency: "LKR",
-        qty: 1,
+        qty: bookingQty,
         meta: {
-          category: meal.catogery,
-          description: meal.description,
+          category: bookingMeal.catogery,
+          description: bookingMeal.description,
         },
       });
       toast.success("Added to cart");
+      setShowBookingModal(false);
+      setBookingMeal(null);
       window.dispatchEvent(new CustomEvent("cart:changed"));
     } catch (e) {
       const s = e?.response?.status;
@@ -263,10 +282,10 @@ export default function CustomerMeals() {
                   <button
                     className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 disabled:opacity-50 cursor-pointer`}
                     disabled={!m.avalability}
-                    onClick={() => addMealToCart(m)}
+                    onClick={() => openBookingModal(m)}
                   >
                     <ShoppingCart size={16} />
-                    Add to Cart
+                    Book Now
                   </button>
                 </div>
               </div>
@@ -277,6 +296,64 @@ export default function CustomerMeals() {
       {!loading && filtered.length === 0 && (
         <div className="text-center text-neutral-500 py-10">
           No meals found.
+        </div>
+      )}
+
+      {/* Booking Modal */}
+      {showBookingModal && bookingMeal && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowBookingModal(false)}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative z-[1001] w-full max-w-md rounded-2xl overflow-hidden bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Book Meal</h3>
+              <div className="mb-4 text-sm text-neutral-700">
+                <div>
+                  <span className="font-medium">{bookingMeal.name}</span>
+                </div>
+                <div className="text-xs text-neutral-500">
+                  Price: LKR {Number(bookingMeal.price || 0).toFixed(2)} per item
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Quantity</label>
+                  <input
+                    ref={bookingQtyRef}
+                    type="number"
+                    className="w-full rounded-xl border border-neutral-200 px-3 py-2"
+                    value={bookingQty}
+                    onChange={(e) => setBookingQty(Math.max(1, Number(e.target.value)))}
+                    min={1}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700"
+                  onClick={() => setShowBookingModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2 rounded-xl text-white ${gradBG}`}
+                  onClick={addMealToCartWithQty}
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

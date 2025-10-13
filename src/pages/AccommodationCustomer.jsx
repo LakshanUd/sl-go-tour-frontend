@@ -1,5 +1,5 @@
 // src/pages/AccommodationCustomer.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { CartAPI } from "../api/cart";
@@ -84,6 +84,13 @@ export default function AccommodationCustomer() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(null);
 
+  // booking modal
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingAccommodation, setBookingAccommodation] = useState(null);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingNights, setBookingNights] = useState(1);
+  const bookingDateRef = useRef();
+
   async function load() {
     try {
       setLoading(true);
@@ -130,6 +137,14 @@ export default function AccommodationCustomer() {
     setOpen(true);
   }
 
+  function openBookingModal(a) {
+    setBookingAccommodation(a);
+    setBookingDate("");
+    setBookingNights(1);
+    setShowBookingModal(true);
+    setTimeout(() => bookingDateRef.current?.focus(), 100);
+  }
+
   async function addAccommodationToCart(a) {
     const image = Array.isArray(a.images) && a.images[0] ? a.images[0] : "";
     try {
@@ -149,6 +164,45 @@ export default function AccommodationCustomer() {
         },
       });
       toast.success("Added to cart");
+      window.dispatchEvent(new CustomEvent("cart:changed"));
+    } catch (e) {
+      const s = e?.response?.status;
+      if (s === 401 || s === 403) {
+        toast.error("Please log in to add items to cart.");
+      } else {
+        toast.error(e?.response?.data?.message || "Failed to add to cart");
+      }
+    }
+  }
+
+  async function handleBookNow() {
+    if (!bookingDate || !bookingNights || bookingNights < 1) {
+      toast.error("Please select a valid booking date and number of nights.");
+      return;
+    }
+    const a = bookingAccommodation;
+    const image = Array.isArray(a.images) && a.images[0] ? a.images[0] : "";
+    try {
+      await CartAPI.addItem({
+        serviceType: "Accommodation",
+        refId: a._id,
+        name: a.name || a.type || "Accommodation",
+        image,
+        code: a.name || a.type || "",
+        unitPrice: Number(a.pricePerNight || 0),
+        currency: "LKR",
+        qty: bookingNights,
+        bookingDate,
+        bookingNights,
+        meta: {
+          type: a.type,
+          capacity: a.capacity,
+          amenities: a.amenities,
+        },
+      });
+      toast.success("Added to cart");
+      setShowBookingModal(false);
+      setBookingAccommodation(null);
       window.dispatchEvent(new CustomEvent("cart:changed"));
     } catch (e) {
       const s = e?.response?.status;
@@ -279,7 +333,7 @@ export default function AccommodationCustomer() {
 
                     <button
                       className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 cursor-pointer`}
-                      onClick={() => addAccommodationToCart(a)}
+                      onClick={() => openBookingModal(a)}
                     >
                       <ShoppingCart size={16} />
                       Book Now
@@ -293,6 +347,75 @@ export default function AccommodationCustomer() {
 
       {!loading && filtered.length === 0 && (
         <div className="text-center text-neutral-500 py-10">No accommodations found.</div>
+      )}
+
+      {/* Booking Modal */}
+      {showBookingModal && bookingAccommodation && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowBookingModal(false)}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative z-[1001] w-full max-w-md rounded-2xl overflow-hidden bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Book Accommodation</h3>
+              <div className="mb-4 text-sm text-neutral-700">
+                <div>
+                  <span className="font-medium">{bookingAccommodation.name}</span> ({bookingAccommodation.type || "Accommodation"})
+                </div>
+                <div className="text-xs text-neutral-500">
+                  Price: LKR {Number(bookingAccommodation.pricePerNight || 0).toFixed(2)} per night
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Booking Date</label>
+                  <input
+                    ref={bookingDateRef}
+                    type="date"
+                    className="w-full rounded-xl border border-neutral-200 px-3 py-2"
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">No. of Nights</label>
+                  <input
+                    type="number"
+                    className="w-full rounded-xl border border-neutral-200 px-3 py-2"
+                    value={bookingNights}
+                    onChange={(e) => setBookingNights(Math.max(1, Number(e.target.value)))}
+                    min={1}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700"
+                  onClick={() => setShowBookingModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2 rounded-xl text-white ${gradBG}`}
+                  onClick={handleBookNow}
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Preview Modal */}

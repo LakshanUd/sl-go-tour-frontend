@@ -1,5 +1,5 @@
 // src/pages/VehicleCustomer.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { CartAPI } from "../api/cart";
@@ -87,6 +87,13 @@ export default function VehicleCustomer() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(null);
 
+  // booking modal
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingVehicle, setBookingVehicle] = useState(null);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingDays, setBookingDays] = useState(1);
+  const bookingDateRef = useRef();
+
   async function load() {
     try {
       setLoading(true);
@@ -133,6 +140,14 @@ export default function VehicleCustomer() {
     setOpen(true);
   }
 
+  function openBookingModal(vehicle) {
+    setBookingVehicle(vehicle);
+    setBookingDate("");
+    setBookingDays(1);
+    setShowBookingModal(true);
+    setTimeout(() => bookingDateRef.current?.focus(), 100);
+  }
+
   async function addVehicleToCart(v) {
     const image = Array.isArray(v.images) && v.images[0] ? v.images[0] : "";
     try {
@@ -147,6 +162,35 @@ export default function VehicleCustomer() {
         qty: 1,
       });
       toast.success("Added to cart");
+      window.dispatchEvent(new CustomEvent("cart:changed"));
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Failed to add to cart");
+    }
+  }
+
+  async function handleBookNow() {
+    if (!bookingDate || !bookingDays || bookingDays < 1) {
+      toast.error("Please select a valid booking date and number of days.");
+      return;
+    }
+    const v = bookingVehicle;
+    const image = Array.isArray(v.images) && v.images[0] ? v.images[0] : "";
+    try {
+      await CartAPI.addItem({
+        serviceType: "Vehicle",
+        refId: v._id,
+        name: v.brand ? `${v.brand} (${v.regNo || v.vehicleID || ""})` : v.regNo || v.vehicleID || "Vehicle",
+        image,
+        code: v.vehicleID || v.regNo || "",
+        unitPrice: Number(v.price || 0),
+        currency: "LKR",
+        qty: bookingDays,
+        bookingDate,
+        bookingDays,
+      });
+      toast.success("Added to cart");
+      setShowBookingModal(false);
+      setBookingVehicle(null);
       window.dispatchEvent(new CustomEvent("cart:changed"));
     } catch (e) {
       toast.error(e?.response?.data?.message || "Failed to add to cart");
@@ -279,7 +323,7 @@ export default function VehicleCustomer() {
 
                     <button
                       className={`inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 cursor-pointer`}
-                      onClick={() => addVehicleToCart(v)}
+                      onClick={() => openBookingModal(v)}
                     >
                       <ShoppingCart size={16} />
                       Book Now
@@ -294,6 +338,75 @@ export default function VehicleCustomer() {
       {!loading && filtered.length === 0 && (
         <div className="text-center text-neutral-500 py-10">
           No vehicles found.
+        </div>
+      )}
+
+      {/* Booking Modal */}
+      {showBookingModal && bookingVehicle && (
+        <div
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setShowBookingModal(false)}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative z-[1001] w-full max-w-md rounded-2xl overflow-hidden bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Book Vehicle</h3>
+              <div className="mb-4 text-sm text-neutral-700">
+                <div>
+                  <span className="font-medium">{bookingVehicle.brand}</span> ({bookingVehicle.regNo || bookingVehicle.vehicleID || "Vehicle"})
+                </div>
+                <div className="text-xs text-neutral-500">
+                  Price: LKR {Number(bookingVehicle.price || 0).toFixed(2)} per day
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Booking Date</label>
+                  <input
+                    ref={bookingDateRef}
+                    type="date"
+                    className="w-full rounded-xl border border-neutral-200 px-3 py-2"
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">No. of Days</label>
+                  <input
+                    type="number"
+                    className="w-full rounded-xl border border-neutral-200 px-3 py-2"
+                    value={bookingDays}
+                    onChange={(e) => setBookingDays(Math.max(1, Number(e.target.value)))}
+                    min={1}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mt-5">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl border border-neutral-200 hover:bg-neutral-50 text-neutral-700"
+                  onClick={() => setShowBookingModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`px-4 py-2 rounded-xl text-white ${gradBG}`}
+                  onClick={handleBookNow}
+                >
+                  Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

@@ -21,6 +21,7 @@ import {
   MessageSquare,
   AlertCircle,
   UserCog,
+  Trash2,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { confirmToast } from "../../components/ConfirmToast";
@@ -482,6 +483,32 @@ export default function ManageInventoryAdmin() {
     }
   }
 
+  async function onDelete(id, name) {
+    const ok = await confirmToast({
+      title: "Delete inventory?",
+      message: `Delete “${name || "this item"}”? This cannot be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!ok) return;
+
+    try {
+      await InvAPI.remove(id);
+      toast.success("Inventory deleted");
+      setRows((prev) => prev.filter((r) => r._id !== id));
+      // Record activity
+      const logs = pushActivity({
+        action: "DELETE",
+        id,
+        name,
+      });
+      setActivity(logs);
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.error || "Delete failed");
+    }
+  }
+
   /* ------------ Render ------------ */
   return (
     <div className="min-h-screen bg-neutral-50 pt-24">
@@ -706,6 +733,7 @@ export default function ManageInventoryAdmin() {
                         <th className="text-left p-3">Quantity</th>
                         <th className="text-left p-3">Status</th>
                         <th className="text-left p-3">Dates</th>
+                        <th className="text-right p-3">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -728,13 +756,23 @@ export default function ManageInventoryAdmin() {
                                 <div>Purchased: {toISODateInput(r.purchaseDate) || "—"}</div>
                                 <div>Expiry: {toISODateInput(r.expiryDate) || "—"}</div>
                               </td>
+                              <td className="p-3 text-right">
+                                <button
+                                  onClick={() => onDelete(r._id, r.name)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-rose-600 hover:bg-rose-700 rounded-xl"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Delete
+                                </button>
+                              </td>
                             </tr>
                           );
                         })}
 
                       {!loading && listFiltered.length === 0 && (
                         <tr>
-                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
+                          <td className="p-8 text-center text-neutral-500" colSpan={5}>
                             {rows.length === 0
                               ? "No inventory records."
                               : "No results match your search."}
@@ -744,7 +782,7 @@ export default function ManageInventoryAdmin() {
 
                       {loading && (
                         <tr>
-                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
+                          <td className="p-8 text-center text-neutral-500" colSpan={5}>
                             Loading inventory…
                           </td>
                         </tr>
@@ -1008,7 +1046,7 @@ export default function ManageInventoryAdmin() {
                   className="p-2 rounded-lg hover:bg-neutral-100 transition-colors"
                 >
                   <svg className="h-5 w-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>

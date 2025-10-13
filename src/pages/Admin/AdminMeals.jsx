@@ -654,6 +654,7 @@ export default function AdminMeals() {
                       value={form.description}
                       onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                       placeholder="Short description…"
+                      required
                     />
                   </div>
                 </div>

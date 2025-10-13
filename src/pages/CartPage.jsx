@@ -187,8 +187,8 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      {/* Read-only quantity (no +/- controls) */}
-                      <div className="mt-2 flex items-center gap-3">
+                      {/* Hide quantity */}
+                      {/* <div className="mt-2 flex items-center gap-3">
                         <span className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm text-neutral-700">
                           Qty:
                           <span className="font-medium">{it.qty}</span>
@@ -198,6 +198,15 @@ export default function CartPage() {
                           Quantity is set during booking.
                         </span>
 
+                        <button
+                          className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
+                          onClick={() => remove(it)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </button>
+                      </div> */}
+                      <div className="mt-2 flex items-center gap-3">
                         <button
                           className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50"
                           onClick={() => remove(it)}

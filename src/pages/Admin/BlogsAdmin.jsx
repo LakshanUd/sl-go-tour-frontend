@@ -172,7 +172,7 @@ export default function BlogsAdmin() {
         tags: Array.isArray(b.tags) ? b.tags.join(", ") : "",
         publishedDate: b.publishedDate
           ? new Date(b.publishedDate).toISOString().slice(0, 10)
-          : "",
+          : new Date().toISOString().slice(0, 10), // fallback to today
       });
       setEditingId(id);
       setFile(null);
@@ -191,7 +191,7 @@ export default function BlogsAdmin() {
       content: "",
       image: "",
       tags: "",
-      publishedDate: "",
+      publishedDate: new Date().toISOString().slice(0, 10), // always today
     });
     setFile(null);
     setOpenModal(true);
@@ -223,7 +223,7 @@ export default function BlogsAdmin() {
               .map((t) => t.trim())
               .filter(Boolean)
           : [],
-        publishedDate: form.publishedDate ? new Date(form.publishedDate) : undefined,
+        publishedDate: form.publishedDate ? new Date(form.publishedDate) : new Date(), // always today
       };
 
       if (editingId) {
@@ -663,7 +663,7 @@ export default function BlogsAdmin() {
                   <Input
                     type="date"
                     value={form.publishedDate}
-                    onChange={(e) => setForm((f) => ({ ...f, publishedDate: e.target.value }))}
+                    disabled // Make it not changable
                   />
                 </div>
 
