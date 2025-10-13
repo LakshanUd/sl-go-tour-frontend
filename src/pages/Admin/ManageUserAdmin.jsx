@@ -900,7 +900,19 @@ export default function ManageUserAdmin() {
                   <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
                 </Field>
                 <Field label="Mobile *">
-                  <Input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} required />
+                  <Input
+                    inputMode="tel"
+                    pattern="^\+?\d+$"
+                    title='Use only numbers, optionally starting with "+"'
+                    value={form.mobile}
+                    onChange={(e) => {
+                      let v = e.target.value;
+                      v = v.replace(/[^\d+]/g, "");      // allow only digits and '+'
+                      v = v.replace(/(?!^)\+/g, "");     // keep '+' only if it's the first char
+                      setForm({ ...form, mobile: v });
+                    }}
+                    required
+                  />
                 </Field>
               </div>
             </Section>

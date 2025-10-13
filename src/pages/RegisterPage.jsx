@@ -63,8 +63,8 @@ export default function RegisterPage() {
     if (!form.email.trim()) errs.push("Email is required.");
     if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.push("Enter a valid email.");
     if (!form.mobile.trim()) errs.push("Mobile is required.");
-    if (!/^\+?[0-9 ()-]{7,}$/.test(form.mobile))
-      errs.push("Enter a valid mobile number.");
+    if (!/^\+?[0-9]{7,}$/.test(form.mobile))
+      errs.push("Invalid mobile number");
     if (!form.nationality.trim()) errs.push("Nationality is required.");
     if (!form.gender) errs.push("Please select a gender.");
 
@@ -233,7 +233,12 @@ export default function RegisterPage() {
                       type="tel"
                       name="mobile"
                       value={form.mobile}
-                      onChange={onChange}
+                      onChange={(e) => {
+                      let v = e.target.value;
+                      v = v.replace(/[^\d+]/g, "");      // allow only digits and '+'
+                      v = v.replace(/(?!^)\+/g, "");     // keep '+' only if it's the first char
+                      setForm({ ...form, mobile: v });
+                    }}
                       required
                       placeholder="+94 77 123 4567"
                       className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
