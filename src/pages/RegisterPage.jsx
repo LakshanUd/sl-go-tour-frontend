@@ -3,7 +3,7 @@ import { useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, Link } from "react-router-dom";
-import { UserPlus, ShieldCheck, Sparkles, CheckCircle2, XCircle } from "lucide-react";
+import { UserPlus, ShieldCheck, Sparkles, CheckCircle2, XCircle, Eye, EyeOff, } from "lucide-react";
 
 const GRAD_FROM = "from-[#09E65A]";
 const GRAD_TO = "to-[#16A34A]";
@@ -262,10 +262,17 @@ export default function RegisterPage() {
                         <button
                           type="button"
                           onClick={() => setShowPw((s) => !s)}
-                          className="absolute inset-y-0 right-2 my-auto text-xs px-2 py-1 rounded-md text-neutral-600 hover:bg-neutral-100 cursor-pointer"
+                          aria-label={showPw ? "Hide password" : "Show password"}
+                          aria-pressed={showPw}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-neutral-100"
                         >
-                          {showPw ? "Hide" : "Show"}
+                          {showPw ? (
+                            <EyeOff className="h-4 w-4 text-neutral-600" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-neutral-600" />
+                          )}
                         </button>
+
                       </div>
                       {/* Strength Bar */}
                       <div className="mt-2">
@@ -300,10 +307,17 @@ export default function RegisterPage() {
                         <button
                           type="button"
                           onClick={() => setShowPw2((s) => !s)}
-                          className="absolute inset-y-0 right-2 my-auto text-xs px-2 py-1 rounded-md text-neutral-600 hover:bg-neutral-100 cursor-pointer"
+                          aria-label={showPw2 ? "Hide password" : "Show password"}
+                          aria-pressed={showPw}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-neutral-100"
                         >
-                          {showPw2 ? "Hide" : "Show"}
+                          {showPw2 ? (
+                            <EyeOff className="h-4 w-4 text-neutral-600" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-neutral-600" />
+                          )}
                         </button>
+
                       </div>
                     </Field>
                   </div>

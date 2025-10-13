@@ -35,6 +35,8 @@ import {
   MessageSquare,
   AlertCircle,
   Bot,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
 import { confirmToast } from "../../components/ConfirmToast";
@@ -929,11 +931,18 @@ export default function ManageUserAdmin() {
                     />
                     <button
                       type="button"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-neutral-100 text-xs"
                       onClick={() => setShowPw((s) => !s)}
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                      aria-pressed={showPw}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-neutral-100"
                     >
-                      {showPw ? "Hide" : "Show"}
+                      {showPw ? (
+                        <EyeOff className="h-4 w-4 text-neutral-600" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-neutral-600" />
+                      )}
                     </button>
+
                   </div>
                   <PasswordStrength value={form.password} />
                 </Field>
