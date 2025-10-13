@@ -230,8 +230,12 @@ export default function VehicleReportPage() {
           color="purple"
         />
         <StatCard
-          title="Avg Rental Value"
-          value={`LKR ${Number(reports.avgRentalValue || 0).toFixed(2)}`}
+          title="Maintenance Load"
+          value={
+            Array.isArray(reports.mostRented)
+              ? reports.mostRented.filter(v => v.status === 'under_maintenance').length
+              : 0
+          }
           icon={Clock}
           color="red"
         />

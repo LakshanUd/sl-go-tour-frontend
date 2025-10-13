@@ -590,34 +590,22 @@ export default function ManageInventoryAdmin() {
               </div>
             )}
 
-            {/* Reports */}
-            <AccordionHeader
-              title="Reports"
-              isOpen={open.reports}
-              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
-            />
-            {open.reports && (
-              <div className="px-3 pb-3">
-                <RailLink to="/admin/reports" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">All Reports</span>
-                </RailLink>
-              </div>
-            )}
-
-            {/* Account */}
-            <AccordionHeader
-              title="Account Settings"
-              isOpen={open.account}
-              onToggle={() => setOpen((s) => ({ ...s, account: !s.account }))}
-              last
-            />
-            {open.account && (
-              <div className="px-3 pb-3">
-                <RailLink to="/profile/settings" icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Profile Settings</span>
-                </RailLink>
-              </div>
-            )}
+            {/* 04. Profile */}
+                        <AccordionHeader
+                          title="Account Settings"
+                          isOpen={open.reports}
+                          onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
+                        />
+                        {open.account && (
+                          <div className="px-3 pb-3">
+                            <RailLink
+                              to="/profile/settings"
+                              icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                            >
+                              <span className="whitespace-nowrap">Profile Settings</span>
+                            </RailLink>
+                          </div>
+                        )}
           </div>
         </aside>
 

@@ -226,12 +226,6 @@ export default function FeedbacksReportPage() {
             color="green"
           />
           <StatCard
-            title="Response Rate"
-            value={`${Number(reports.responseRate || 0).toFixed(1)}%`}
-            icon={BarChart3}
-            color="purple"
-          />
-          <StatCard
             title="Active Reviewers"
             value={reports.activeReviewers || 0}
             icon={Users}

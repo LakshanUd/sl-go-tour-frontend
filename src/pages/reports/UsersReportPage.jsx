@@ -9,6 +9,7 @@ import {
   Globe,
   Download,
   BarChart3,
+  RefreshCcw,
   Calendar,
   UserCheck,
 } from "lucide-react";
@@ -185,7 +186,7 @@ export default function UsersReportPage() {
                 onClick={loadReports}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-neutral-200 bg-white text-neutral-700 font-medium hover:bg-neutral-50"
               >
-                <BarChart3 className="h-4 w-4" />
+                <RefreshCcw className="h-4 w-4" />
                 Refresh Reports
               </button>
               <button
@@ -221,12 +222,6 @@ export default function UsersReportPage() {
             value={reports.newUsersThisMonth || 0}
             icon={Calendar}
             color="green"
-          />
-          <StatCard
-            title="Active Users"
-            value={reports.activeUsers || 0}
-            icon={UserCheck}
-            color="purple"
           />
           <StatCard
             title="Growth Rate"

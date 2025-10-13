@@ -325,16 +325,21 @@ export async function generateReportPDF({
 
 
 /* ---------- Specific Report Generators ---------- */
-export async function generateVehicleReportPDF(reportData) {
+export async function generateVehicleReportPDF(reports) {
+  // Calculate maintenance load
+  const maintenanceLoad = Array.isArray(reports.mostRented)
+    ? reports.mostRented.filter(v => v.status === 'under_maintenance').length
+    : 0;
+
   const stats = [
-    { label: "Total Vehicles", value: reportData.totalVehicles || 0 },
-    { label: "Total Rentals", value: reportData.totalRentals || 0 },
-    { label: "Total Revenue", value: formatMoney(reportData.totalRevenue || 0) },
-    { label: "Avg Rental Value", value: formatMoney(reportData.avgRentalValue || 0) }
+    { label: "Total Vehicles", value: reports.totalVehicles || 0 },
+    { label: "Total Rentals", value: reports.totalRentals || 0 },
+    { label: "Total Revenue", value: formatMoney(reports.totalRevenue || 0) },
+    { label: "Maintenance Load", value: maintenanceLoad }
   ];
 
-  const mostRentedData = reportData.mostRented || [];
-  const leastRentedData = reportData.leastRented || [];
+  const mostRentedData = reports.mostRented || [];
+  const leastRentedData = reports.leastRented || [];
 
   return generateReportPDF({
     title: "Vehicle Rental Report",
@@ -430,7 +435,6 @@ export async function generateFeedbackReportPDF(reportData) {
   const stats = [
     { label: "Total Feedbacks", value: reportData.totalFeedbacks || 0 },
     { label: "Avg Rating", value: `${reportData.avgRating?.toFixed(1) || 0}/5` },
-    { label: "Response Rate", value: `${reportData.responseRate?.toFixed(1) || 0}%` },
     { label: "Active Reviewers", value: reportData.activeReviewers || 0 }
   ];
 
@@ -493,19 +497,44 @@ export async function generateUserReportPDF(reportData) {
   const stats = [
     { label: "Total Users", value: reportData.totalUsers || 0 },
     { label: "New This Month", value: reportData.newUsersThisMonth || 0 },
-    { label: "Active Users", value: reportData.activeUsers || 0 },
     { label: "Growth Rate", value: `${reportData.growthRate?.toFixed(1) || 0}%` }
   ];
 
-  const topCountriesData = reportData.topCountries || [];
-  const moderatorsByRoleData = reportData.moderatorsByRole || [];
+  // Prepare table data for Top Countries by New Users
+  const topCountriesData = Array.isArray(reportData.topCountries)
+    ? reportData.topCountries.map((c, idx) => {
+        const userCount = c.userCount || c.count || 0;
+        let percentage = "0%";
+        if (typeof c.percentage === "number") {
+          percentage = `${c.percentage.toFixed(1)}%`;
+        } else if (typeof c.percentage === "string") {
+          percentage = c.percentage;
+        } else if (reportData.newUsersThisMonth) {
+          percentage = `${((userCount / reportData.newUsersThisMonth) * 100).toFixed(1)}%`;
+        }
+        return {
+          country: c.country || c.name || "—",
+          userCount,
+          percentage
+        };
+      })
+    : [];
+
+  // Custom headers and rows for the table
+  const headers = ["Country", "User count", "Percentage"];
+  const tableData = topCountriesData.map(c => [
+    c.country,
+    String(c.userCount),
+    c.percentage
+  ]);
 
   return generateReportPDF({
     title: "User Analytics Report",
-    subtitle: "User Demographics & Growth Analysis",
-    data: [...topCountriesData, ...moderatorsByRoleData],
+    subtitle: "Top Countries by New Users",
+    data: tableData,
     stats,
-    filename: `user-analytics-report-${Date.now()}.pdf`
+    filename: `user-analytics-report-${Date.now()}.pdf`,
+    customTable: { headers }
   });
 }
 
@@ -532,9 +561,7 @@ export async function generateFinanceReportPDF(reportData) {
 export async function generateBookingReportPDF(reportData) {
   const stats = [
     { label: "Total Bookings", value: reportData.totalBookings || 0 },
-    { label: "Total Revenue", value: formatMoney(reportData.totalRevenue || 0) },
-    { label: "Avg Booking Value", value: formatMoney(reportData.avgBookingValue || 0) },
-    { label: "Conversion Rate", value: `${reportData.conversionRate?.toFixed(1) || 0}%` }
+    { label: "Total Revenue", value: formatMoney(reportData.totalRevenue || 0) }
   ];
 
   const busiestDatesData = reportData.busiestDates || [];

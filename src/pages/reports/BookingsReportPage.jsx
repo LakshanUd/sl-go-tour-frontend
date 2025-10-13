@@ -224,18 +224,6 @@ export default function BookingsReportPage() {
             icon={DollarSign}
             color="green"
           />
-          <StatCard
-            title="Avg Booking Value"
-            value={`LKR ${Number(reports.avgBookingValue || 0).toFixed(2)}`}
-            icon={BarChart3}
-            color="purple"
-          />
-          <StatCard
-            title="Conversion Rate"
-            value={`${Number(reports.conversionRate || 0).toFixed(1)}%`}
-            icon={TrendingUp}
-            color="red"
-          />
         </div>
 
         {/* Reports Grid */}
