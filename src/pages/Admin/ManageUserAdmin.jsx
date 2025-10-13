@@ -694,8 +694,6 @@ export default function ManageUserAdmin() {
                     <span className="font-medium">{u.email}</span>
                     <span className="text-neutral-500"> — created </span>
                     <span>{fmtDate(u.createdAt)}</span>
-                    <span className="text-neutral-500"> · last login </span>
-                    <span>{fmtDate(u.lastLogin)}</span>
                   </li>
                 ))}
                 {rows.length === 0 && <li className="p-4 text-neutral-500 text-sm">No activity.</li>}
@@ -749,7 +747,6 @@ export default function ManageUserAdmin() {
                         <th className="text-left p-3">User</th>
                         <th className="text-left p-3">Email</th>
                         <th className="text-left p-3">Status</th>
-                        <th className="text-left p-3">Last Login</th>
                         <th className="text-left p-3">Role</th>
                         <th className="text-right p-3">Actions</th>
                       </tr>
@@ -784,7 +781,6 @@ export default function ManageUserAdmin() {
                               </td>
                               <td className="p-3">{u.email || "—"}</td>
                               <td className="p-3"><StatusPill status={status} /></td>
-                              <td className="p-3">{fmtDate(u.lastLogin)}</td>
                               <td className="p-3">
                                 {canEditRole ? (
                                   <select

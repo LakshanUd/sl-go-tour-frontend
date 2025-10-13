@@ -246,14 +246,14 @@ export default function Header() {
           <div className="ml-auto flex items-center gap-4">
             {/* Desktop nav (right sided) */}
             <nav className="hidden md:flex items-center gap-2">
-              {nav.map((item) => (
-                <NavLink key={item.name} to={item.to} className={linkClass}>
-                  {item.name}
-                </NavLink>
-              ))}
-            </nav>
+            {nav.map((item) => (
+              <NavLink key={item.name} to={item.to} className={linkClass}>
+                {item.name}
+              </NavLink>
+            ))}
+          </nav>
 
-            {/* Desktop actions */}
+          {/* Desktop actions */}
             <div className="hidden md:flex items-center gap-2">
               {/* Cart with badge (only if user is logged in) */}
               {user && (
@@ -290,8 +290,8 @@ export default function Header() {
                   aria-label="User menu"
                   aria-expanded={showUserMenu}
                 >
-                  <span
-                    className={[
+                <span
+                  className={[
                       "h-9 w-9 inline-flex items-center justify-center rounded-full transition border",
                       light
                         ? "bg-white/10 text-white hover:bg-white/15 border-white/40 backdrop-blur-md"
@@ -299,8 +299,8 @@ export default function Header() {
                       user && isInDashboard
                         ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A] text-white border-transparent"
                         : "",
-                    ].join(" ")}
-                  >
+                  ].join(" ")}
+                >
                     {user ? (
                       <span className="text-l font-medium">
                         {user.firstName?.charAt(0)?.toUpperCase() ||
@@ -309,7 +309,7 @@ export default function Header() {
                     ) : (
                       <User className={light ? "h-4 w-4 text-white" : "h-4 w-4"} />
                     )}
-                  </span>
+                </span>
                 </button>
 
                 {/* Dropdown */}
@@ -369,21 +369,21 @@ export default function Header() {
                   </div>
                 )}
               </div>
-            </div>
+          </div>
 
-            {/* Mobile menu button */}
-            <button
-              type="button"
+          {/* Mobile menu button */}
+          <button
+            type="button"
               className={[
                 "md:hidden p-2 rounded-lg transition",
                 light ? "hover:bg-white/10 text-white backdrop-blur-md" : "hover:bg-neutral-100 text-neutral-700",
               ].join(" ")}
-              aria-label="Toggle menu"
-              aria-expanded={mobileOpen}
-              onClick={() => setMobileOpen((v) => !v)}
-            >
-              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-            </button>
+            aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((v) => !v)}
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
           </div>
         </div>
       </div>
@@ -467,14 +467,14 @@ function MobileMenuPortal({
                     </span>
                   )}
                 </Link>
-                <button
-                  type="button"
-                  className="p-2 rounded-md hover:bg-neutral-100"
-                  aria-label="Close menu"
-                  onClick={onClose}
-                >
-                  <X className="h-5 w-5 text-neutral-700" />
-                </button>
+              <button
+                type="button"
+                className="p-2 rounded-md hover:bg-neutral-100"
+                aria-label="Close menu"
+                onClick={onClose}
+              >
+                <X className="h-5 w-5 text-neutral-700" />
+              </button>
               </div>
             </div>
 
@@ -529,8 +529,8 @@ function MobileMenuPortal({
                     onClick={handleGoDashboard}
                     className="block rounded-xl p-[1px] mx-3 bg-gradient-to-r from-[#09E65A22] to-[#16A34A22] hover:from-[#09E65A33] hover:to-[#16A34A33]"
                     title="Go to dashboard"
-                  >
-                    <span className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-sm text-neutral-700">
+              >
+                <span className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-sm text-neutral-700">
                       <LayoutDashboard className="h-4 w-4 text-[#16A34A]" />
                       Go to Dashboard
                     </span>
@@ -572,7 +572,7 @@ function MobileMenuPortal({
                     <span className="flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-sm text-neutral-600">
                       <User className="h-4 w-4" />
                       Sign Up
-                    </span>
+                </span>
                   </Link>
                 </>
               )}

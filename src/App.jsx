@@ -89,7 +89,7 @@ function App() {
     <BrowserRouter>
       <Toaster position="top-right" />
       <ScrollToTopOnRoute />
-      <Header />
+    <Header />
 
       <Routes>
         {/* ---------- Public ---------- */}
