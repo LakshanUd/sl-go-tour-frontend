@@ -4,7 +4,7 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
-import { LogIn, ShieldCheck, Sparkles } from "lucide-react";
+import { LogIn, ShieldCheck, Sparkles, Eye, EyeOff } from "lucide-react";
 
 const GRAD_FROM = "from-[#09E65A]";
 const GRAD_TO = "to-[#16A34A]";
@@ -227,7 +227,8 @@ export default function LoginPage() {
                         onClick={() => setShowPw((s) => !s)}
                         className="absolute inset-y-0 right-2 my-auto text-xs px-2 py-1 rounded-md text-neutral-600 hover:bg-neutral-100 cursor-pointer"
                       >
-                        {showPw ? "Hide" : "Show"}
+                        {showPw ? <EyeOff className="h-4 w-4 text-neutral-600" />
+                         : <Eye className="h-4 w-4 text-neutral-600" />}
                       </button>
                     </div>
                     <div className="mt-1 text-right">
