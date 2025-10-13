@@ -1,6 +1,6 @@
 // src/pages/CustomerPage.jsx
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   CalendarCheck2,
@@ -11,7 +11,6 @@ import {
   AlertCircle,
   MessagesSquare,
   PhoneCall,
-  History,
 } from "lucide-react";
 
 /* ---- Theme tokens: match Admin (GREEN) ---- */
@@ -74,10 +73,19 @@ export default function CustomerPage() {
     return () => clearTimeout(t);
   }, []);
 
-  // Optional: user name from localStorage
+  const navigate = useNavigate();
+
+  // Optional: user name and role from localStorage
   const user = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
   }, []);
+
+  // Redirect Admins to /admin/overview
+  useEffect(() => {
+    if (user?.role === "Admin") {
+      navigate("/admin/overview", { replace: true });
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-neutral-50 pt-24">
