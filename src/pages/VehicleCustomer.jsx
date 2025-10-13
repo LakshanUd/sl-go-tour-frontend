@@ -54,7 +54,7 @@ function normalize(v = {}) {
     type: v.type, // car | van | bus | suv | jeep | minibus
     seatingCapacity: v.seatingCapacity,
     fuelType: v.fuelType, // petrol | diesel | hybrid | electric
-    status: v.status, // active | inactive | under_maintenance
+    status: v.status, // Available | Unavailable | under_maintenance
     price: Number(v.price ?? 0), // LKR (per-day or base price)
     images,
   };
@@ -64,13 +64,13 @@ function StatusPill({ status }) {
   let cls =
     "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ";
   switch (status) {
-    case "active":
+    case "Available":
       cls += "bg-emerald-50 text-emerald-700 ring-emerald-200";
       break;
     case "under_maintenance":
       cls += "bg-amber-50 text-amber-700 ring-amber-200";
       break;
-    case "inactive":
+    case "Unavailable":
     default:
       cls += "bg-rose-50 text-rose-700 ring-rose-200";
       break;
@@ -94,7 +94,7 @@ export default function VehicleCustomer() {
       const raw = Array.isArray(res?.data)
         ? res.data
         : res?.data?.vehicles || res?.data?.items || res?.data?.data || [];
-      const list = (raw || []).map(normalize).filter((v) => v.status === "active");
+      const list = (raw || []).map(normalize).filter((v) => v.status === "Available");
       setRows(list);
     } catch (e) {
       console.error(e);
@@ -162,7 +162,7 @@ export default function VehicleCustomer() {
             Browse <span className={gradText}>Vehicles</span>
           </h2>
           <p className="text-sm text-neutral-500">
-            Find the perfect ride for your journey.
+            Find the perfect ride for your journey. Showing only available vehicles.
           </p>
         </div>
 
@@ -231,9 +231,16 @@ export default function VehicleCustomer() {
 
                 <div className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-3">
-                    <h3 className="font-semibold text-lg leading-snug line-clamp-2">
-                      {v.brand || "Vehicle"}
-                    </h3>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg leading-snug line-clamp-2">
+                        {v.brand || "Vehicle"}
+                      </h3>
+                      <div className="mt-1">
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                          ✓ Available
+                        </span>
+                      </div>
+                    </div>
                     <div className="shrink-0 text-right">
                       <div className="text-xs text-neutral-500">Price</div>
                       <div className="font-semibold text-emerald-600">

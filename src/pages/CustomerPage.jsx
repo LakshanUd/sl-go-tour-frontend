@@ -1,219 +1,318 @@
 // src/pages/CustomerPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import {
-  User,
-  CreditCard,
+  LayoutDashboard,
   CalendarCheck2,
-  Receipt,
-  LifeBuoy,
-  Bell,
   Settings,
+  ChevronRight,
   ArrowRight,
+  MessageSquareText,
+  AlertCircle,
+  MessagesSquare,
+  PhoneCall,
+  History,
 } from "lucide-react";
 
-/* ---- Theme tokens (match AdminPage) ---- */
-const GRAD_FROM = "from-[#DA22FF]";
-const GRAD_TO = "to-[#9733EE]";
+/* ---- Theme tokens: match Admin (GREEN) ---- */
+const GRAD_FROM = "from-[#09E65A]";
+const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
-const ICON_COLOR = "text-[#9733EE]";
+const ICON_COLOR = "text-[#16A34A]";
+const CARD = "rounded-xl border border-neutral-200 bg-white shadow-sm";
+
+/* ---- Persist sidebar accordion state ---- */
+const LS_KEY = "customerSidebarOpen";
 
 export default function CustomerPage() {
+  // Sidebar accordion state (persisted)
+  const [open, setOpen] = useState({
+    overview: true,
+    bookings: true,
+    payments: true,
+    support: true,
+    notifications: true,
+    account: true,
+  });
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setOpen((s) => ({
+          overview: typeof parsed.overview === "boolean" ? parsed.overview : s.overview,
+          bookings: typeof parsed.bookings === "boolean" ? parsed.bookings : s.bookings,
+          payments: typeof parsed.payments === "boolean" ? parsed.payments : s.payments,
+          support: typeof parsed.support === "boolean" ? parsed.support : s.support,
+          notifications: typeof parsed.notifications === "boolean" ? parsed.notifications : s.notifications,
+          account: typeof parsed.account === "boolean" ? parsed.account : s.account,
+        }));
+      }
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(open));
+    } catch {}
+  }, [open]);
+
+  // Tabs like Admin pages
+  const [tab, setTab] = useState("Overview"); // Overview | Activity | Settings
+
+  // Recent activity (mock/demo)
   const [loading, setLoading] = useState(true);
   const [recent, setRecent] = useState([]);
-
   useEffect(() => {
-    // Mock recent activity
     const t = setTimeout(() => {
       setRecent([
         { id: "BK-512", title: "Booking confirmed", when: "1h ago" },
         { id: "PM-884", title: "Payment received (Invoice #INV-2025-014)", when: "Yesterday" },
-        { id: "AL-092", title: "New tour updates available", when: "2 days ago" },
+        { id: "NT-245", title: "New message from support", when: "2 days ago" },
       ]);
       setLoading(false);
     }, 500);
     return () => clearTimeout(t);
   }, []);
 
-  // Optional: derive user details from localStorage if available
-  const user = (() => {
+  // Optional: user name from localStorage
+  const user = useMemo(() => {
     try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
-  })();
+  }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {/* Top bar */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome{user?.firstName ? `, ${user.firstName}` : ""} 👋
-          </h1>
-          <p className="text-sm text-neutral-500">Manage your account, bookings, and payments.</p>
-        </div>
-
-        {/* Account Settings */}
-        <div className={`rounded-md p-[1px] ${GRAD_BG}`}>
-          <Link
-            to="/profile/settings"
-            className="inline-flex items-center gap-2 rounded-[6px] bg-white px-3 py-1.5 text-sm text-neutral-800 hover:bg-neutral-50"
-          >
-            <Settings className={`h-4 w-4 ${ICON_COLOR}`} />
-            Account Settings
-          </Link>
-        </div>
-      </div>
-
-      {/* Layout: left menu + right content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Navigation / sections */}
-        <aside className="lg:col-span-1">
-          <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-            <section className="rounded-xl bg-white p-4 shadow-sm">
-              {/* Profile & Account */}
-              <SectionTitle icon={<User className={`h-5 w-5 ${ICON_COLOR}`} />} title="Profile & Account" />
-              <div className="space-y-2">
-                <QuickLink to="/account/profile" icon={<User className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  View / Edit Personal Details
-                </QuickLink>
-                <QuickLink to="/account/feedbacks" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Manage Feedbacks
-                </QuickLink>
-                <QuickLink to="/account/payments" icon={<CreditCard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Payment Methods
-                </QuickLink>
+    <div className="min-h-screen bg-neutral-50 pt-24">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* ===== Sidebar (vehicle-style like Admin) ===== */}
+        <aside className="lg:col-span-4 xl:col-span-3">
+          <div className="rounded-xl border border-neutral-200 bg-white">
+            {/* Overview */}
+            <AccordionHeader
+              title="Overview"
+              isOpen={open.overview}
+              onToggle={() => setOpen((s) => ({ ...s, overview: !s.overview }))}
+            />
+            {open.overview && (
+              <div className="px-3 pb-2">
+                <RailLink to="/customer" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Dashboard</span>
+                </RailLink>
+                <RailLink to="/profile/settings-cus" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Account Settings</span>
+                </RailLink>
               </div>
+            )}
 
-              {/* Bookings */}
-              <SectionTitle
-                className="mt-6"
-                icon={<CalendarCheck2 className={`h-5 w-5 ${ICON_COLOR}`} />}
-                title="Bookings"
-              />
-              <div className="space-y-2">
-                <QuickLink to="/bookings" icon={<CalendarCheck2 className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  My Bookings (upcoming, ongoing, completed)
-                </QuickLink>
-                <QuickLink to="/bookings/history" icon={<CalendarCheck2 className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Booking Status & History
-                </QuickLink>
-                <QuickLink to="/bookings/manage" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Cancel / Modify Booking
-                </QuickLink>
+            {/* Feedbacks & Complaints */}
+            <AccordionHeader
+              title="Feedbacks & Complaints"
+              isOpen={open.payments}
+              onToggle={() => setOpen((s) => ({ ...s, payments: !s.payments }))}
+            />
+            {open.payments && (
+              <div className="px-3 pb-2">
+                <RailLink to="/account/feedbacks" icon={<MessageSquareText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">My Feedbacks</span>
+                </RailLink>
+                <RailLink to="/account/complaints" icon={<AlertCircle className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">My Complaints</span>
+                </RailLink>
               </div>
+            )}
 
-              {/* Payments & Invoices */}
-              <SectionTitle className="mt-6" icon={<Receipt className={`h-5 w-5 ${ICON_COLOR}`} />} title="Payments & Invoices" />
-              <div className="space-y-2">
-                <QuickLink to="/payments/history" icon={<CreditCard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Payment History
-                </QuickLink>
-                <QuickLink to="/payments/invoices" icon={<Receipt className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Download Invoices / Receipts
-                </QuickLink>
+            {/* Bookings */}
+            <AccordionHeader
+              title="Bookings"
+              isOpen={open.bookings}
+              onToggle={() => setOpen((s) => ({ ...s, bookings: !s.bookings }))}
+            />
+            {open.bookings && (
+              <div className="px-3 pb-2">
+                <RailLink to="/bookings" icon={<CalendarCheck2 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">My Bookings</span>
+                </RailLink>
               </div>
+            )}
 
-              {/* Support & Assistance */}
-              <SectionTitle className="mt-6" icon={<LifeBuoy className={`h-5 w-5 ${ICON_COLOR}`} />} title="Support & Assistance" />
-              <div className="space-y-2">
-                <QuickLink to="/support/chat" icon={<LifeBuoy className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Chat with Support / Tour Guide
-                </QuickLink>
-                <QuickLink to="/support/emergency" icon={<LifeBuoy className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Emergency Contact Numbers
-                </QuickLink>
+            {/* Support */}
+            <AccordionHeader
+              title="Support"
+              isOpen={open.support}
+              onToggle={() => setOpen((s) => ({ ...s, support: !s.support }))}
+            />
+            {open.support && (
+              <div className="px-3 pb-2">
+                <RailLink to="/support/chat" icon={<MessagesSquare className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Chat with Support</span>
+                </RailLink>
+                <RailLink to="/support/emergency" icon={<PhoneCall className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Emergency Contacts</span>
+                </RailLink>
               </div>
-
-              {/* Notifications */}
-              <SectionTitle className="mt-6" icon={<Bell className={`h-5 w-5 ${ICON_COLOR}`} />} title="Notifications" />
-              <div className="space-y-2">
-                <QuickLink to="/notifications" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  View Notifications
-                </QuickLink>
-                <QuickLink to="/notifications/preferences" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  Notification Preferences
-                </QuickLink>
-              </div>
-            </section>
+            )}
           </div>
         </aside>
 
-        {/* RIGHT: Dashboard content */}
-        <main className="lg:col-span-2 space-y-6">
-          {/* Overview stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <MiniStat label="Upcoming bookings" value="2" />
-            <MiniStat label="Unread notifications" value="4" />
-            <MiniStat label="Outstanding balance" value="LKR 0.00" />
+        {/* ===== Main content (right) ===== */}
+        <main className="lg:col-span-8 xl:col-span-9 space-y-6">
+          {/* Header / Greeting */}
+          <div className="mb-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold leading-tight">
+                <span className={`text-transparent bg-clip-text ${GRAD_BG}`}>
+                  {`Welcome${user?.firstName ? `, ${user.firstName}` : ""}`}
+                </span>
+                &nbsp;· Customer Dashboard
+              </h2>
+              <p className="text-sm text-neutral-500">Manage your bookings, payments, and account.</p>
+            </div>
           </div>
 
-          {/* Recent Activity */}
-          <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
-            <section className="rounded-xl bg-white shadow-sm">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 rounded-t-xl">
-                <h3 className="text-sm font-medium text-neutral-700">Recent activity</h3>
-                <Link
-                  to="/activity"
-                  className="text-sm text-neutral-700 inline-flex items-center gap-1 hover:opacity-90"
-                >
-                  View all <ArrowRight className={`h-4 w-4 ${ICON_COLOR}`} />
-                </Link>
+          {/* Top tabs (same pattern as Admin pages) */}
+          <div className={`${CARD} p-3`}>
+            <div className="flex flex-wrap gap-2">
+              <TopTab active={tab === "Overview"} onClick={() => setTab("Overview")}>Overview</TopTab>
+              <TopTab active={tab === "Activity"} onClick={() => setTab("Activity")}>Activity</TopTab>
+              <TopTab active={tab === "Settings"} onClick={() => setTab("Settings")}>Settings</TopTab>
+            </div>
+          </div>
+
+          {/* ===== Overview ===== */}
+          {tab === "Overview" && (
+            <>
+              {/* Stats row (like Admin) */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <StatCardBig label="Upcoming bookings" value="2" />
+                <StatCardBig label="Unread notifications" value="4" />
+                <StatCardBig label="Outstanding balance" value="LKR 0.00" />
               </div>
 
-              <div className="px-4 py-3">
-                {loading ? (
-                  <TableSkeleton rows={4} />
-                ) : recent.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No recent activity.</p>
-                ) : (
-                  <ul className="divide-y">
-                    {recent.map((r) => (
-                      <li key={r.id} className="flex items-center justify-between py-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-neutral-800 truncate">{r.title}</p>
-                          <p className="text-xs text-neutral-500">{r.id}</p>
-                        </div>
-                        <span className="text-xs text-neutral-500">{r.when}</span>
-                      </li>
-                    ))}
-                  </ul>
+              {/* Recent Activity list */}
+              <div className={`${CARD}`}>
+                <div className="px-4 py-3 border-b flex items-center justify-between">
+                  <div className="font-medium">Recent activity</div>
+                  <Link to="/activity" className="text-sm text-neutral-700 inline-flex items-center gap-1 hover:opacity-90">
+                    View all <ArrowRight className={`h-4 w-4 ${ICON_COLOR}`} />
+                  </Link>
+                </div>
+                <div className="px-4 py-3">
+                  {loading ? (
+                    <TableSkeleton rows={4} />
+                  ) : recent.length === 0 ? (
+                    <p className="text-sm text-neutral-500">No recent activity.</p>
+                  ) : (
+                    <ul className="divide-y">
+                      {recent.map((r) => (
+                        <li key={r.id} className="flex items-center justify-between py-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-neutral-800 truncate">{r.title}</p>
+                            <p className="text-xs text-neutral-500">{r.id}</p>
+                          </div>
+                          <span className="text-xs text-neutral-500">{r.when}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ===== Activity ===== */}
+          {tab === "Activity" && (
+            <div className={CARD}>
+              <div className="p-4 border-b">
+                <div className="font-medium">Timeline</div>
+                <p className="text-xs text-neutral-500">Your most recent bookings and payments.</p>
+              </div>
+              <ul className="divide-y">
+                {recent.map((r) => (
+                  <li key={r.id} className="p-4 text-sm">
+                    <span className="font-medium">{r.title}</span>
+                    <span className="text-neutral-500"> — {r.id} · {r.when}</span>
+                  </li>
+                ))}
+                {recent.length === 0 && (
+                  <li className="p-4 text-neutral-500 text-sm">No activity yet.</li>
                 )}
+              </ul>
+            </div>
+          )}
+
+          {/* ===== Settings ===== */}
+          {tab === "Settings" && (
+            <div className={CARD}>
+              <div className="p-4 border-b">
+                <div className="font-medium">Preferences</div>
+                <p className="text-xs text-neutral-500">These are client-side display settings.</p>
               </div>
-            </section>
-          </div>
+              <div className="p-4 grid sm:grid-cols-2 gap-4">
+                <div className="rounded-lg border p-3">
+                  <div className="text-sm font-medium">Default currency</div>
+                  <p className="mt-2 text-sm text-neutral-600">LKR (default)</p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <div className="text-sm font-medium">Notifications</div>
+                  <p className="mt-2 text-sm text-neutral-600">
+                    Manage in <Link to="/notifications/preferences" className="underline">Notification Preferences</Link>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
   );
 }
 
-/* ---------- small building blocks ---------- */
-function SectionTitle({ icon, title, className = "" }) {
+/* ---------- Sidebar bits (same as Admin style) ---------- */
+function AccordionHeader({ title, isOpen, onToggle, last = false }) {
   return (
-    <div className={`mb-3 mt-2 flex items-center justify-between ${className}`}>
-      <div className="flex items-center gap-2">
-        {icon}
-        <h2 className="text-sm font-medium text-neutral-700">{title}</h2>
-      </div>
-    </div>
+    <button
+      onClick={onToggle}
+      className={[
+        "w-full flex items-center justify-between px-3 py-2 text-left text-xs font-medium uppercase tracking-wide",
+        "cursor-pointer",
+        last ? "" : "border-b border-neutral-200",
+      ].join(" ")}
+    >
+      <span className="text-neutral-500">{title}</span>
+      <svg
+        viewBox="0 0 24 24"
+        className={["h-4 w-4 transition-transform text-neutral-500", isOpen ? "rotate-0" : "rotate-180"].join(" ")}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="m18 15-6-6-6 6" />
+      </svg>
+    </button>
   );
 }
-
-function QuickLink({ to, icon, children }) {
+function RailLink({ to, icon, children }) {
   return (
-    <NavLink to={to} className="block">
+    <NavLink to={to} className="block group">
       {({ isActive }) => (
-        <div className={`rounded-lg p-[1px] ${GRAD_BG}`}>
+        <div
+          className={[
+            "rounded-lg p-[1px] my-1",
+            isActive
+              ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A]"
+              : "bg-gradient-to-r from-transparent to-transparent group-hover:from-[#09E65A1A] group-hover:to-[#16A34A1A]",
+          ].join(" ")}
+        >
           <span
             className={[
               "flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm transition",
-              isActive ? "shadow-sm" : "hover:bg-neutral-50",
+              "hover:bg-neutral-50",
+              isActive ? "shadow-sm" : "",
             ].join(" ")}
           >
-            <span className="inline-flex items-center gap-2 text-neutral-800">
-              <span>{icon}</span>
-              {children}
+            <span className="inline-flex items-center gap-2 text-neutral-800 overflow-hidden">
+              {icon}
+              <span className="whitespace-nowrap">{children}</span>
             </span>
-            <ArrowRight className={`h-4 w-4 ${ICON_COLOR}`} />
+            <ChevronRight className={`h-4 w-4 ${ICON_COLOR}`} />
           </span>
         </div>
       )}
@@ -221,17 +320,31 @@ function QuickLink({ to, icon, children }) {
   );
 }
 
-function MiniStat({ label, value }) {
+/* ---------- Small UI bits (green focus) ---------- */
+function TopTab({ active, onClick, children }) {
   return (
-    <div className={`rounded-lg p-[1px] ${GRAD_BG}`}>
-      <div className="rounded-lg bg-white p-3">
-        <p className="text-xs text-neutral-500">{label}</p>
-        <p className="mt-1 text-lg font-semibold text-neutral-900">{value}</p>
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-lg px-3 py-1.5 text-sm border",
+        active ? "bg-white shadow-sm border-transparent" : "bg-white hover:bg-neutral-50 border-neutral-200",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+function StatCardBig({ label, value }) {
+  return (
+    <div className={`rounded-xl p-[1px] ${GRAD_BG}`}>
+      <div className="rounded-xl bg-white p-4 text-center">
+        <div className="text-2xl font-semibold">{value}</div>
+        <div className="text-xs text-neutral-500 mt-1">{label}</div>
       </div>
     </div>
   );
 }
-
 function TableSkeleton({ rows = 4 }) {
   return (
     <div className="animate-pulse space-y-3">

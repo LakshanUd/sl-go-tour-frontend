@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import Chatbot from "../components/Chatbot";
 
 /* ---------- Theme tokens ---------- */
 const GRAD_FROM = "from-[#09E65A]";
@@ -281,13 +282,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
+      <Chatbot />
       {/* ================= HERO (SINGLE FULL IMAGE, BOTTOM CONTENT) ================= */}
       <section className="relative min-h-[100vh] sm:min-h-[100vh] overflow-hidden">
-        {/* Background: hero.jpg */}
+        {/* Background: hero.webp */}
         <div
           className="absolute w-full h-screen -z-10 bg-cover bg-center animate-[zoom_20s_ease-in-out_infinite]"
           style={{
-            backgroundImage: `url('/hero.jpg')`,
+            backgroundImage: `url('/hero.webp')`,
             animationName: "zoom",
           }}
         />
@@ -336,7 +338,7 @@ export default function HomePage() {
       <section className="relative py-12">
         <div
           className="pointer-events-none absolute inset-0 -z-10 bg-center bg-cover opacity-20"
-          style={{ backgroundImage: "url('/bg-map.jpg')" }}
+          style={{ backgroundImage: "url('/bg-map.webp')" }}
         />
         {/* center the whole section */}
         <div className="flex justify-center px-4 sm:px-6 lg:px-8 p-15">
@@ -346,7 +348,7 @@ export default function HomePage() {
             <div className="w-full max-w-[587px] h-[408px] overflow-hidden border border-neutral-200 shadow-sm">
               <div className="relative">
                 <img
-                  src="/hero-5.jpg"
+                  src="/hero-5.webp"
                   alt="Sri Lanka"
                   className="h-[360px] w-full object-cover sm:h-[420px]"
                 />
@@ -507,7 +509,7 @@ export default function HomePage() {
             {/* Left: static image */}
             <div
               className="h-[420px] sm:h-[520px] lg:h-[560px] bg-center bg-cover"
-              style={{ backgroundImage: "url('/rate.jpg')" }}
+              style={{ backgroundImage: "url('/rate.webp')" }}
             />
 
             {/* Right: dark panel with subtle map bg */}
@@ -516,7 +518,7 @@ export default function HomePage() {
               <div
                 className="absolute inset-0 opacity-8"
                 style={{
-                  backgroundImage: "url('/bg-map2.png')",
+                  backgroundImage: "url('/bg-map2.webp')",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   backgroundRepeat: "no-repeat",
@@ -597,7 +599,7 @@ export default function HomePage() {
       <section className="relative py-12">
         <div
           className="pointer-events-none absolute inset-0 -z-10 bg-center bg-cover opacity-20"
-          style={{ backgroundImage: "url('/bg-map.jpg')" }}
+          style={{ backgroundImage: "url('/bg-map.webp')" }}
         />
         {/* center the whole section */}
         <div className="flex justify-center px-4 sm:px-6 lg:px-8 p-15">
@@ -626,7 +628,7 @@ export default function HomePage() {
             <div className="w-full max-w-[587px] h-[408px] overflow-hidden border border-neutral-200 shadow-sm">
               <div className="relative">
                 <img
-                  src="/hero-6.jpg"
+                  src="/hero-6.webp"
                   alt="Sri Lanka"
                   className="h-[360px] w-full object-cover sm:h-[420px]"
                 />

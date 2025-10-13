@@ -5,8 +5,8 @@ import { toast } from "react-hot-toast";
 import { confirmToast } from "../components/ConfirmToast";
 import { Trash2, ShoppingBag } from "lucide-react";
 
-const gradFrom = "from-[#DA22FF]";
-const gradTo = "to-[#9733EE]";
+const gradFrom = "from-[#09E65A]";
+const gradTo = "to-[#16A34A]";
 const gradBG = `bg-gradient-to-r ${gradFrom} ${gradTo}`;
 
 /* ---- helpers ---- */
@@ -133,7 +133,7 @@ export default function CartPage() {
   const hasItems = (cart?.items?.length || 0) > 0;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6">
+    <div className="max-w-5xl mx-auto px-4 lg:px-6 py-6 pt-28">
       <h1 className="text-2xl font-bold mb-4">Your Cart</h1>
 
       {loading && <div className="text-neutral-500 py-10">Loading…</div>}

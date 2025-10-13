@@ -1,35 +1,32 @@
 // src/pages/Admin/ManageInventoryAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import {
   Boxes,
-  Plus,
   Search,
-  Trash2,
-  X,
-  Filter,
   Download,
   ChevronRight,
-  ListOrdered,
-  Settings as SettingsIcon,
-  Layers3,
-  ClipboardList,
-  Pencil,
   LayoutDashboard,
   Users,
   Wallet,
   CalendarDays,
   FileText,
   BarChart3,
-  Bell,
-  Package,
-  Settings,
+  MapPin,
+  UtensilsCrossed,
+  Hotel,
+  Truck,
+  MessageSquare,
+  AlertCircle,
+  UserCog,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { confirmToast } from "../../components/ConfirmToast";
+import { getRole } from "../../utils/auth";
 
-/* ---------- Theme (GREEN like ManageUserAdmin) ---------- */
+/* ---------- Theme (GREEN) ---------- */
 const GRAD_FROM = "from-[#09E65A]";
 const GRAD_TO = "to-[#16A34A]";
 const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
@@ -41,8 +38,10 @@ const gradText = `text-transparent bg-clip-text ${GRAD_BG}`;
 const LS_KEY = "adminSidebarOpen";
 
 /* ---------- Enums ---------- */
-const TYPE_OPTS = ["RECEIVE", "ISSUE", "ADJUSTMENT", "TRANSFER"];
 const STATUS_OPTS = ["in_stock", "out_of_stock", "expired"];
+
+/* ---------- Activity storage ---------- */
+const ACTIVITY_KEY = "inv_activity_logs";
 
 /* ---------- API base ---------- */
 const RAW_BASE =
@@ -78,20 +77,6 @@ const InvAPI = {
 };
 
 /* ---------- helpers ---------- */
-const EMPTY = {
-  item: "", // ObjectId string
-  type: "RECEIVE",
-  quantity: "",
-  unitCost: "",
-  name: "",
-  category: "General",
-  description: "",
-  location: "Main Warehouse",
-  purchaseDate: "", // yyyy-mm-dd
-  expiryDate: "", // yyyy-mm-dd
-  status: "in_stock",
-};
-
 function fmtNum(n, digits = 2) {
   const v = Number(n);
   return Number.isFinite(v) ? v.toFixed(digits) : "0.00";
@@ -117,10 +102,8 @@ function toCSV(rows) {
     "inventoryID",
     "name",
     "category",
-    "type",
     "quantity",
-    "unitCost",
-    "status",
+    "status(computed)",
     "location",
     "purchaseDate",
     "expiryDate",
@@ -130,10 +113,13 @@ function toCSV(rows) {
   const lines = rows.map((r) =>
     cols
       .map((c) => {
-        const val =
-          c === "purchaseDate" || c === "expiryDate" || c === "createdAt"
-            ? (r[c] ? new Date(r[c]).toISOString() : "")
-            : r[c] ?? "";
+        let val = "";
+        if (c === "status(computed)") val = computeStatus(r);
+        else if (["purchaseDate", "expiryDate", "createdAt"].includes(c)) {
+          val = r[c] ? new Date(r[c]).toISOString() : "";
+        } else {
+          val = r[c] ?? "";
+        }
         return `"${String(val).replace(/"/g, '""')}"`;
       })
       .join(",")
@@ -141,12 +127,40 @@ function toCSV(rows) {
   return [header, ...lines].join("\n");
 }
 
+/** Compute status from quantity + expiry */
+function computeStatus(row) {
+  const qty = Number(row?.quantity || 0);
+  const exp = row?.expiryDate ? new Date(row.expiryDate).getTime() : null;
+  const now = Date.now();
+  if (exp && !Number.isNaN(exp) && exp < now) return "expired";
+  if (qty <= 0) return "out_of_stock";
+  return "in_stock";
+}
+
+/** persist activity logs */
+function readActivity() {
+  try {
+    return JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+function pushActivity(entry) {
+  const next = [{ ts: Date.now(), ...entry }, ...readActivity()].slice(0, 200);
+  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(next));
+  return next;
+}
+
 /* ---------- component ---------- */
 export default function ManageInventoryAdmin() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Role-based permissions
+  const userRole = getRole();
+  const canAddStock = userRole === "Admin" || userRole === "IN-Manager";
 
-  /* Vehicle-style left sidebar accordion (persisted) */
+  /* Sidebar */
   const [open, setOpen] = useState({
     overview: true,
     content: true,
@@ -176,22 +190,39 @@ export default function ManageInventoryAdmin() {
   }, [open]);
 
   /* main page state */
-  const [tab, setTab] = useState("Overview"); // Overview | Activity | Settings | Lists
+  const [tab, setTab] = useState("Overview"); // Overview | Lists | Issue | Return | Activity
 
-  /* search + filters */
-  const [q, setQ] = useState(localStorage.getItem("inv_q") || "");
-  const [filterType, setFilterType] = useState(localStorage.getItem("inv_type") || "All");
-  const [filterStatus, setFilterStatus] = useState(localStorage.getItem("inv_status") || "All");
-  const [filterCategory, setFilterCategory] = useState(localStorage.getItem("inv_cat") || "All");
+  /* search (Lists) */
+  const [qList, setQList] = useState(localStorage.getItem("inv_q_list") || "");
+  useEffect(() => {
+    localStorage.setItem("inv_q_list", qList);
+  }, [qList]);
 
-  /* create modal */
-  const [openCreate, setOpenCreate] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState(EMPTY);
+  /* Issue state */
+  const [qIssue, setQIssue] = useState("");
+  const [issueMap, setIssueMap] = useState({}); // {id: qtyToIssue}
+  const [issuing, setIssuing] = useState({}); // {id: boolean}
 
-  /* edit/view drawer */
-  const [drawer, setDrawer] = useState(null); // item object or null
-  const [savingDrawer, setSavingDrawer] = useState(false);
+  /* Return state */
+  const [qReturn, setQReturn] = useState("");
+  const [returning, setReturning] = useState({}); // {id: boolean}
+
+  /* Add Stock state */
+  const [addStockForm, setAddStockForm] = useState({
+    name: "",
+    category: "General",
+    description: "",
+    location: "Main Warehouse",
+    quantity: "",
+    unitCost: "",
+    purchaseDate: new Date().toISOString().slice(0, 10),
+    expiryDate: "",
+  });
+  const [submittingStock, setSubmittingStock] = useState(false);
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
+
+  /* Activity (local) */
+  const [activity, setActivity] = useState(readActivity());
 
   async function load() {
     try {
@@ -211,38 +242,23 @@ export default function ManageInventoryAdmin() {
     load();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("inv_q", q);
-    localStorage.setItem("inv_type", filterType);
-    localStorage.setItem("inv_status", filterStatus);
-    localStorage.setItem("inv_cat", filterCategory);
-  }, [q, filterType, filterStatus, filterCategory]);
-
   /* derived lists */
-  const categories = useMemo(() => {
-    const s = new Set();
-    rows.forEach((r) => r.category && s.add(r.category));
-    return ["All", ...Array.from(s).sort()];
-  }, [rows]);
-
-  /* stats */
   const stats = useMemo(() => {
     const total = rows.length;
-    const inStock = rows.filter((r) => r.status === "in_stock").length;
-    const outStock = rows.filter((r) => r.status === "out_of_stock").length;
-    const expired = rows.filter((r) => r.status === "expired").length;
-    const totalValue = rows.reduce((acc, r) => acc + Number(r.unitCost || 0) * Number(r.quantity || 0), 0);
+    const inStock = rows.filter((r) => computeStatus(r) === "in_stock").length;
+    const outStock = rows.filter((r) => computeStatus(r) === "out_of_stock").length;
+    const expired = rows.filter((r) => computeStatus(r) === "expired").length;
+    const totalValue = rows.reduce(
+      (acc, r) => acc + Number(r.unitCost || 0) * Math.max(0, Number(r.quantity || 0)),
+      0
+    );
     return { total, inStock, outStock, expired, totalValue };
   }, [rows]);
 
-  const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase();
+  /* Lists tab (read-only) */
+  const listFiltered = useMemo(() => {
+    const t = qList.trim().toLowerCase();
     let list = rows;
-
-    if (filterType !== "All") list = list.filter((r) => r.type === filterType);
-    if (filterStatus !== "All") list = list.filter((r) => r.status === filterStatus);
-    if (filterCategory !== "All") list = list.filter((r) => (r.category || "") === filterCategory);
-
     if (t) {
       list = list.filter((r) => {
         const hay = [
@@ -251,10 +267,8 @@ export default function ManageInventoryAdmin() {
           r.category,
           r.description,
           r.location,
-          r.type,
-          r.status,
+          computeStatus(r),
           String(r.quantity),
-          String(r.unitCost),
         ]
           .filter(Boolean)
           .join(" ")
@@ -262,137 +276,45 @@ export default function ManageInventoryAdmin() {
         return hay.includes(t);
       });
     }
-    return list;
-  }, [rows, q, filterType, filterStatus, filterCategory]);
-
-  /* create */
-  function openCreateModal() {
-    setForm({
-      ...EMPTY,
-      purchaseDate: new Date().toISOString().slice(0, 10),
+    // order by status then name
+    return [...list].sort((a, b) => {
+      const sa = computeStatus(a);
+      const sb = computeStatus(b);
+      if (sa === sb) return (a.name || "").localeCompare(b.name || "");
+      const order = { expired: 0, out_of_stock: 1, in_stock: 2 };
+      return (order[sb] ?? 0) - (order[sa] ?? 0);
     });
-    setOpenCreate(true);
-  }
-  function closeCreateModal() {
-    setOpenCreate(false);
-  }
-  async function submitCreate(e) {
-    e.preventDefault();
-    const f = form;
-    // validations
-    if (!f.item.trim()) return toast.error("Item (ObjectId) is required");
-    if (!TYPE_OPTS.includes(f.type)) return toast.error("Invalid type");
-    if (String(f.quantity).trim() === "") return toast.error("Quantity is required");
-    if (Number(f.quantity) < 0) return toast.error("Quantity must be >= 0");
-    if (Number(f.unitCost) < 0) return toast.error("Unit cost must be >= 0");
-    if (!f.name.trim()) return toast.error("Name is required");
-    if (!STATUS_OPTS.includes(f.status)) return toast.error("Invalid status");
+  }, [rows, qList]);
 
-    try {
-      setCreating(true);
-      const payload = {
-        item: f.item.trim(),
-        type: f.type,
-        quantity: Number(f.quantity),
-        unitCost: Number(f.unitCost || 0),
-        name: f.name.trim(),
-        category: f.category?.trim() || "General",
-        description: f.description || "",
-        location: f.location?.trim() || "Main Warehouse",
-        purchaseDate: f.purchaseDate ? new Date(f.purchaseDate) : undefined,
-        expiryDate: f.expiryDate ? new Date(f.expiryDate) : undefined,
-        status: f.status,
-      };
-      await InvAPI.create(payload);
-      toast.success("Inventory record created");
-      setOpenCreate(false);
-      await load();
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.response?.data?.error || e?.message || "Create failed");
-    } finally {
-      setCreating(false);
-    }
-  }
+  /* Issue tab: only available (in_stock) and not expired */
+  const issueList = useMemo(() => {
+    const t = qIssue.trim().toLowerCase();
+    return rows
+      .filter((r) => computeStatus(r) === "in_stock")
+      .filter((r) => {
+        if (!t) return true;
+        const hay = [r.inventoryID, r.name, r.category, r.location].filter(Boolean).join(" ").toLowerCase();
+        return hay.includes(t);
+      })
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [rows, qIssue]);
 
-  /* drawer open/close */
-  async function openDrawer(row) {
-    try {
-      const id = row?._id;
-      if (!id) return;
-      const res = await InvAPI.get(id);
-      setDrawer(res?.data || row);
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.response?.data?.error || "Open failed");
-    }
-  }
-  function closeDrawer() {
-    setDrawer(null);
-  }
-  async function saveDrawer() {
-    if (!drawer?._id) return;
-    // minimal validation
-    if (!drawer.name?.trim()) return toast.error("Name is required");
-    if (!STATUS_OPTS.includes(drawer.status)) return toast.error("Invalid status");
-    try {
-      setSavingDrawer(true);
-      const payload = {
-        ...drawer,
-        purchaseDate: drawer.purchaseDate ? new Date(drawer.purchaseDate) : undefined,
-        expiryDate: drawer.expiryDate ? new Date(drawer.expiryDate) : undefined,
-      };
-      await InvAPI.update(drawer._id, payload);
-      toast.success("Inventory updated");
-      setSavingDrawer(false);
-      setDrawer(null);
-      await load();
-    } catch (e) {
-      console.error(e);
-      setSavingDrawer(false);
-      toast.error(e?.response?.data?.error || e?.message || "Update failed");
-    }
-  }
-
-  /* inline status change */
-  async function changeStatusInline(row, status) {
-    if (!STATUS_OPTS.includes(status)) return toast.error("Invalid status");
-    try {
-      await InvAPI.update(row._id, { status });
-      toast.success("Status updated");
-      await load();
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.response?.data?.error || "Update failed");
-    }
-  }
-
-  /* delete (UPDATED: confirmToast like ManageUser) */
-  async function onDelete(row) {
-    const label = `${row.name || "record"} (${row.inventoryID || row._id})`;
-    const ok = await confirmToast({
-      title: "Delete Inventory Record",
-      message: `Are you sure you want to delete ${label}?\nThis cannot be undone.`,
-      confirmText: "Delete",
-      cancelText: "Cancel",
-      position: "top-right",
-    });
-    if (!ok) return;
-
-    try {
-      await InvAPI.remove(row._id);
-      toast.success("Deleted");
-      await load();
-    } catch (e) {
-      console.error(e);
-      toast.error(e?.response?.data?.error || "Delete failed");
-    }
-  }
+  /* Return tab: show all available (any status) */
+  const returnList = useMemo(() => {
+    const t = qReturn.trim().toLowerCase();
+    return rows
+      .filter((r) => {
+        if (!t) return true;
+        const hay = [r.inventoryID, r.name, r.category, r.location].filter(Boolean).join(" ").toLowerCase();
+        return hay.includes(t);
+      })
+      .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [rows, qReturn]);
 
   /* export */
-  function exportCSV() {
-    if (!filtered.length) return toast.error("Nothing to export");
-    const csv = toCSV(filtered);
+  function exportCSV(data) {
+    if (!data.length) return toast.error("Nothing to export");
+    const csv = toCSV(data);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -402,13 +324,171 @@ export default function ManageInventoryAdmin() {
     URL.revokeObjectURL(url);
   }
 
-  /* ------------ Render (vehicle-style layout) ------------ */
+  /* ---------- Issue actions ---------- */
+  function onChangeIssueQty(id, value, maxQty) {
+    const v = value.replace(/[^\d.]/g, "");
+    let n = Number(v);
+    if (!Number.isFinite(n) || n < 0) n = 0;
+    if (maxQty != null && n > maxQty) n = maxQty;
+    setIssueMap((m) => ({ ...m, [id]: n }));
+  }
+
+  async function onIssue(row) {
+    const id = row._id;
+    const available = Math.max(0, Number(row.quantity || 0));
+    const qty = Math.max(0, Number(issueMap[id] || 0));
+    if (qty <= 0) return toast.error("Enter a quantity to issue");
+    if (qty > available) return toast.error("Issue quantity exceeds available stock");
+
+    try {
+      setIssuing((s) => ({ ...s, [id]: true }));
+
+      const newQty = available - qty;
+      const nextStatus = computeStatus({ ...row, quantity: newQty });
+
+      await InvAPI.update(id, {
+        quantity: newQty,
+        status: nextStatus, // keep backend aligned, though UI computes anyway
+      });
+
+      // record activity
+      const logs = pushActivity({
+        action: "ISSUE",
+        id,
+        inventoryID: row.inventoryID || "",
+        name: row.name || "",
+        qty,
+        prevQty: available,
+        newQty,
+      });
+      setActivity(logs);
+
+      toast.success(`Issued ${qty} ${qty === 1 ? "unit" : "units"}`);
+      setIssueMap((m) => ({ ...m, [id]: 0 }));
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.error || "Issue failed");
+    } finally {
+      setIssuing((s) => ({ ...s, [id]: false }));
+    }
+  }
+
+  /* ---------- Return actions ---------- */
+  async function onReturn(row) {
+    const id = row._id;
+    const ok = await confirmToast({
+      title: "Return stock",
+      message: `Are you sure you want to return and remove "${row.name || "this item"}" from inventory?`,
+      confirmText: "Return",
+      cancelText: "Cancel",
+      position: "top-right",
+    });
+    if (!ok) return;
+
+    try {
+      setReturning((s) => ({ ...s, [id]: true }));
+      await InvAPI.remove(id);
+
+      // record activity
+      const logs = pushActivity({
+        action: "RETURN",
+        id,
+        inventoryID: row.inventoryID || "",
+        name: row.name || "",
+        qty: Number(row.quantity || 0),
+        removed: true,
+      });
+      setActivity(logs);
+
+      toast.success("Stock returned and removed");
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.error || "Return failed");
+    } finally {
+      setReturning((s) => ({ ...s, [id]: false }));
+    }
+  }
+
+  /* ---------- Add Stock actions ---------- */
+  function onChangeAddStock(field, value) {
+    setAddStockForm(prev => ({ ...prev, [field]: value }));
+  }
+
+  async function onSubmitAddStock(e) {
+    e.preventDefault();
+    
+    // Validation
+    if (!addStockForm.name.trim()) {
+      return toast.error("Item name is required");
+    }
+    if (!addStockForm.quantity || Number(addStockForm.quantity) <= 0) {
+      return toast.error("Valid quantity is required");
+    }
+    if (!addStockForm.unitCost || Number(addStockForm.unitCost) < 0) {
+      return toast.error("Valid unit cost is required");
+    }
+
+    try {
+      setSubmittingStock(true);
+      
+      const payload = {
+        name: addStockForm.name.trim(),
+        category: addStockForm.category,
+        description: addStockForm.description.trim(),
+        location: addStockForm.location.trim(),
+        quantity: Number(addStockForm.quantity),
+        unitCost: Number(addStockForm.unitCost),
+        purchaseDate: addStockForm.purchaseDate,
+        expiryDate: addStockForm.expiryDate || null,
+        type: "RECEIVE", // This indicates it's a new stock addition
+      };
+
+      await InvAPI.create(payload);
+
+      // Record activity
+      const logs = pushActivity({
+        action: "ADD_STOCK",
+        name: addStockForm.name,
+        qty: Number(addStockForm.quantity),
+        unitCost: Number(addStockForm.unitCost),
+        category: addStockForm.category,
+        location: addStockForm.location,
+      });
+      setActivity(logs);
+
+      toast.success("Stock added successfully");
+      
+      // Reset form and close modal
+      setAddStockForm({
+        name: "",
+        category: "General",
+        description: "",
+        location: "Main Warehouse",
+        quantity: "",
+        unitCost: "",
+        purchaseDate: new Date().toISOString().slice(0, 10),
+        expiryDate: "",
+      });
+      setShowAddStockModal(false);
+      
+      await load();
+    } catch (e) {
+      console.error(e);
+      toast.error(e?.response?.data?.error || "Failed to add stock");
+    } finally {
+      setSubmittingStock(false);
+    }
+  }
+
+  /* ------------ Render ------------ */
   return (
     <div className="min-h-screen bg-neutral-50 pt-24">
       <Toaster position="top-right" />
 
       <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* ===== Sidebar (VehiclePage-style) ===== */}
+        {/* ===== Sidebar ===== */}
         <aside className="lg:col-span-4 xl:col-span-3">
           <div className="rounded-xl border border-neutral-200 bg-white">
             {/* Overview */}
@@ -419,13 +499,16 @@ export default function ManageInventoryAdmin() {
             />
             {open.overview && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Analytics</span>
+                <RailLink
+                  to="/admin/overview"
+                  icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Overview</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Content Management */}
+            {/* Content */}
             <AccordionHeader
               title="Content Management"
               isOpen={open.content}
@@ -433,34 +516,34 @@ export default function ManageInventoryAdmin() {
             />
             {open.content && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/tour-packages" icon={<MapPin className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Tours</span>
                 </RailLink>
                 <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Blogs</span>
                 </RailLink>
-                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/manage-meals" icon={<UtensilsCrossed className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Meals</span>
                 </RailLink>
-                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/manage-accommodations" icon={<Hotel className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Accommodations</span>
                 </RailLink>
-                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/manage-vehicles" icon={<Truck className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Vehicles</span>
                 </RailLink>
-                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Inventory</span>
-                </RailLink>
-                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/manage-feedbacks" icon={<MessageSquare className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Feedback</span>
                 </RailLink>
-                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/manage-complaints" icon={<AlertCircle className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+                <RailLink to="/admin/manage-inventory" icon={<Boxes className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                  <span className="whitespace-nowrap">Inventory</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Operations Management */}
+            {/* Operations */}
             <AccordionHeader
               title="Operations Management"
               isOpen={open.ops}
@@ -471,7 +554,7 @@ export default function ManageInventoryAdmin() {
                 <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Users</span>
                 </RailLink>
-                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/admin/manage-finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Finance</span>
                 </RailLink>
                 <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
@@ -487,14 +570,14 @@ export default function ManageInventoryAdmin() {
               onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
             />
             {open.reports && (
-              <div className="px-3 pb-2">
-                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+              <div className="px-3 pb-3">
+                <RailLink to="/admin/reports" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">All Reports</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Account Settings */}
+            {/* Account */}
             <AccordionHeader
               title="Account Settings"
               isOpen={open.account}
@@ -503,7 +586,7 @@ export default function ManageInventoryAdmin() {
             />
             {open.account && (
               <div className="px-3 pb-3">
-                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink to="/profile/settings" icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}>
                   <span className="whitespace-nowrap">Profile Settings</span>
                 </RailLink>
               </div>
@@ -511,7 +594,7 @@ export default function ManageInventoryAdmin() {
           </div>
         </aside>
 
-        {/* ===== Main content (right column) ===== */}
+        {/* ===== Main content ===== */}
         <main className="lg:col-span-8 xl:col-span-9 space-y-6">
           {/* Header / Title row */}
           <div className="mb-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -519,42 +602,35 @@ export default function ManageInventoryAdmin() {
               <h2 className="text-2xl font-bold leading-tight">
                 <span className={gradText}>Admin</span> · Inventory
               </h2>
-              <p className="text-sm text-neutral-500">Track stock movements, adjust status, and export data.</p>
+              <p className="text-sm text-neutral-500">
+                Issue or return stock. Inventory status is calculated automatically.
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Search */}
-              <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
-                <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
-                  <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
-                  <input
-                    className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
-                    placeholder="Search ID / name / category / location…"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                  />
-                </div>
-              </div>
+              {canAddStock && (
+                <button
+                  onClick={() => setShowAddStockModal(true)}
+                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white ${GRAD_BG} hover:opacity-90 transition-opacity`}
+                >
+                  <Boxes className="h-4 w-4" />
+                  Add Stock
+                </button>
+              )}
 
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-white ${GRAD_BG} hover:opacity-95 active:opacity-90`}
-              >
-                <Plus size={16} />
-                New
-              </button>
-
-              <button
-                onClick={exportCSV}
+              {/* Report */}
+              <Link
+                to="/reports/inventory"
                 className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+                title="View inventory reports"
               >
-                <Download className="h-4 w-4" /> Export CSV
-              </button>
+                <BarChart3 className="h-4 w-4" />
+                Report
+              </Link>
             </div>
           </div>
 
-          {/* Top tabs (Overview / Activity / Settings / Lists) */}
+          {/* Top tabs */}
           <div className={`${CARD} p-3`}>
             <div className="flex flex-wrap gap-2">
               <TopTab active={tab === "Overview"} onClick={() => setTab("Overview")}>
@@ -563,11 +639,14 @@ export default function ManageInventoryAdmin() {
               <TopTab active={tab === "Lists"} onClick={() => setTab("Lists")}>
                 Lists
               </TopTab>
+              <TopTab active={tab === "Issue"} onClick={() => setTab("Issue")}>
+                Issue
+              </TopTab>
+              <TopTab active={tab === "Return"} onClick={() => setTab("Return")}>
+                Return
+              </TopTab>
               <TopTab active={tab === "Activity"} onClick={() => setTab("Activity")}>
                 Activity Logs
-              </TopTab>
-              <TopTab active={tab === "Settings"} onClick={() => setTab("Settings")}>
-                Settings
               </TopTab>
             </div>
           </div>
@@ -583,74 +662,18 @@ export default function ManageInventoryAdmin() {
               </div>
 
               <div className={`${CARD} p-4`}>
-                <div className="grid lg:grid-cols-2 gap-4">
-                  <div className="rounded-lg border p-3">
-                    <div className="text-sm font-medium mb-2">By Type</div>
-                    <TypeBars rows={rows} />
-                  </div>
-                  <div className="rounded-lg border p-3">
-                    <div className="text-sm font-medium mb-2">By Status</div>
-                    <StatusBars rows={rows} />
-                  </div>
-                </div>
-                <div className="mt-4 rounded-lg border p-3">
-                  <div className="text-sm font-medium">Estimated Inventory Value</div>
-                  <div className="text-2xl font-semibold mt-1">LKR {fmtNum(stats.totalValue, 2)}</div>
-                  <div className="text-xs text-neutral-500 mt-1">Sum of quantity × unitCost (all rows)</div>
+                <div className="text-sm font-medium">Estimated Inventory Value</div>
+                <div className="text-2xl font-semibold mt-1">LKR {fmtNum(stats.totalValue, 2)}</div>
+                <div className="text-xs text-neutral-500 mt-1">
+                  Sum of quantity × unitCost (computed on current rows)
                 </div>
               </div>
             </>
           )}
 
-          {/* Activity */}
-          {tab === "Activity" && (
-            <div className={CARD}>
-              <div className="p-4 border-b">
-                <div className="font-medium">Recent Activity</div>
-                <p className="text-xs text-neutral-500">Created & updated timestamps.</p>
-              </div>
-              <ul className="divide-y">
-                {rows.slice(0, 25).map((r) => (
-                  <li key={r._id} className="p-4 text-sm">
-                    <span className="font-medium">{r.inventoryID || r._id}</span>
-                    <span className="text-neutral-500"> — {r.name} </span>
-                    <span className="text-neutral-500">· type </span>
-                    <span>{r.type}</span>
-                    <span className="text-neutral-500"> · created </span>
-                    <span>{fmtDate(r.createdAt)}</span>
-                    <span className="text-neutral-500"> · updated </span>
-                    <span>{fmtDate(r.updatedAt)}</span>
-                  </li>
-                ))}
-                {rows.length === 0 && <li className="p-4 text-neutral-500 text-sm">No activity.</li>}
-              </ul>
-            </div>
-          )}
-
-          {/* Settings */}
-          {tab === "Settings" && (
-            <div className={CARD}>
-              <div className="p-4 border-b">
-                <div className="font-medium">Inventory Settings</div>
-                <p className="text-xs text-neutral-500">Display hints—wire to backend if needed.</p>
-              </div>
-              <div className="p-4 grid sm:grid-cols-2 gap-4">
-                <div className="rounded-lg border p-3">
-                  <div className="text-sm font-medium">Reorder Thresholds</div>
-                  <p className="mt-2 text-sm text-neutral-600">Configure per category from backend as needed.</p>
-                </div>
-                <div className="rounded-lg border p-3">
-                  <div className="text-sm font-medium">Warehouse Locations</div>
-                  <p className="mt-2 text-sm text-neutral-600">Manage locations table elsewhere.</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Lists (table) */}
+          {/* Lists (read-only, auto status) */}
           {tab === "Lists" && (
             <>
-              {/* Controls */}
               <div className={`${CARD} p-3`}>
                 <div className="flex flex-wrap gap-2 items-center">
                   <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
@@ -658,109 +681,70 @@ export default function ManageInventoryAdmin() {
                       <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
                       <input
                         className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
-                        placeholder="Search ID / name / category / location…"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Search name / category / location…"
+                        value={qList}
+                        onChange={(e) => setQList(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-auto">
-                    <FilterChip label="Type" value={filterType} onChange={setFilterType} options={["All", ...TYPE_OPTS]} />
-                    <FilterChip label="Status" value={filterStatus} onChange={setFilterStatus} options={["All", ...STATUS_OPTS]} />
-                    <FilterChip label="Category" value={filterCategory} onChange={setFilterCategory} options={categories} />
-                    <button
-                      onClick={exportCSV}
-                      className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-neutral-50"
-                    >
-                      <Download className="h-4 w-4" /> Export CSV
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => exportCSV(listFiltered)}
+                    className="ml-auto inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+                  >
+                    <Download className="h-4 w-4" /> Export CSV
+                  </button>
                 </div>
               </div>
 
-              {/* Table */}
               <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="bg-neutral-50 text-neutral-600">
                       <tr>
                         <th className="text-left p-3">Inventory</th>
-                        <th className="text-left p-3">Type</th>
-                        <th className="text-left p-3">Qty</th>
-                        <th className="text-left p-3">Unit Cost</th>
+                        <th className="text-left p-3">Quantity</th>
                         <th className="text-left p-3">Status</th>
                         <th className="text-left p-3">Dates</th>
-                        <th className="text-right p-3">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {!loading &&
-                        filtered.map((r) => (
-                          <tr key={r._id} className="border-t hover:bg-neutral-50/60">
-                            <td className="p-3">
-                              <button className="text-left" onClick={() => openDrawer(r)} title="View / Edit">
+                        listFiltered.map((r) => {
+                          const status = computeStatus(r);
+                          return (
+                            <tr key={r._id} className="border-t">
+                              <td className="p-3">
                                 <div className="font-medium text-neutral-800">{r.name || "—"}</div>
                                 <div className="text-xs text-neutral-500">
                                   {(r.inventoryID || r._id) || "—"} · {r.category || "—"} · {r.location || "—"}
                                 </div>
-                              </button>
-                            </td>
-                            <td className="p-3">{r.type}</td>
-                            <td className="p-3">{r.quantity}</td>
-                            <td className="p-3">LKR {fmtNum(r.unitCost)}</td>
-                            <td className="p-3">
-                              <select
-                                className="rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
-                                value={r.status || "in_stock"}
-                                onChange={(e) => changeStatusInline(r, e.target.value)}
-                              >
-                                {STATUS_OPTS.map((s) => (
-                                  <option key={s} value={s}>
-                                    {s}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="p-3 text-xs">
-                              <div>Purchased: {toISODateInput(r.purchaseDate) || "—"}</div>
-                              <div>Expiry: {toISODateInput(r.expiryDate) || "—"}</div>
-                            </td>
-                            <td className="p-3">
-                              <div className="flex items-center justify-end gap-2">
-                                <button
-                                  onClick={() => openDrawer(r)}
-                                  className="px-2 py-1.5 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50"
-                                  title="Edit"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </button>
-                                <button
-                                  onClick={() => onDelete(r)}
-                                  className="px-3 py-1.5 rounded-full border border-rose-200 text-rose-600 bg-white hover:bg-rose-50"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="h-4 w-4 inline-block mr-1" />
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="p-3">{Math.max(0, Number(r.quantity || 0))}</td>
+                              <td className="p-3">
+                                <StatusPill value={status} />
+                              </td>
+                              <td className="p-3 text-xs">
+                                <div>Purchased: {toISODateInput(r.purchaseDate) || "—"}</div>
+                                <div>Expiry: {toISODateInput(r.expiryDate) || "—"}</div>
+                              </td>
+                            </tr>
+                          );
+                        })}
 
-                      {!loading && filtered.length === 0 && (
+                      {!loading && listFiltered.length === 0 && (
                         <tr>
-                          <td className="p-8 text-center text-neutral-500" colSpan={7}>
+                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
                             {rows.length === 0
-                              ? "No inventory records. Ensure GET /api/inventory returns an array."
-                              : "No results match your filters."}
+                              ? "No inventory records."
+                              : "No results match your search."}
                           </td>
                         </tr>
                       )}
 
                       {loading && (
                         <tr>
-                          <td className="p-8 text-center text-neutral-500" colSpan={7}>
+                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
                             Loading inventory…
                           </td>
                         </tr>
@@ -771,175 +755,419 @@ export default function ManageInventoryAdmin() {
               </div>
             </>
           )}
+
+          {/* Issue */}
+          {tab === "Issue" && (
+            <>
+              <div className={`${CARD} p-3`}>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
+                    <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
+                      <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
+                      <input
+                        className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
+                        placeholder="Search available stock…"
+                        value={qIssue}
+                        onChange={(e) => setQIssue(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-neutral-50 text-neutral-600">
+                      <tr>
+                        <th className="text-left p-3">Inventory</th>
+                        <th className="text-left p-3">Available</th>
+                        <th className="text-left p-3">Issue Qty</th>
+                        <th className="text-right p-3">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!loading &&
+                        issueList.map((r) => {
+                          const available = Math.max(0, Number(r.quantity || 0));
+                          const val = issueMap[r._id] ?? 0;
+                          const busy = !!issuing[r._id];
+                          return (
+                            <tr key={r._id} className="border-t">
+                              <td className="p-3">
+                                <div className="font-medium text-neutral-800">{r.name || "—"}</div>
+                                <div className="text-xs text-neutral-500">
+                                  {(r.inventoryID || r._id) || "—"} · {r.category || "—"} · {r.location || "—"}
+                                </div>
+                              </td>
+                              <td className="p-3">{available}</td>
+                              <td className="p-3">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={available}
+                                  value={val}
+                                  onChange={(e) => onChangeIssueQty(r._id, e.target.value, available)}
+                                  className="w-28 rounded-lg border border-neutral-200 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
+                                />
+                                <div className="text-xs text-neutral-500 mt-1">Max {available}</div>
+                              </td>
+                              <td className="p-3">
+                                <div className="flex items-center justify-end">
+                                  <button
+                                    onClick={() => onIssue(r)}
+                                    disabled={busy}
+                                    className={`px-3 py-1.5 rounded-xl text-white ${GRAD_BG} disabled:opacity-60`}
+                                  >
+                                    {busy ? "Issuing…" : "Issue"}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                      {!loading && issueList.length === 0 && (
+                        <tr>
+                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
+                            {rows.length === 0 ? "No inventory records." : "No available stock to issue."}
+                          </td>
+                        </tr>
+                      )}
+
+                      {loading && (
+                        <tr>
+                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
+                            Loading…
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Return */}
+          {tab === "Return" && (
+            <>
+              <div className={`${CARD} p-3`}>
+                <div className="flex flex-wrap gap-2 items-center">
+                  <div className="flex items-center rounded-full p-[1px] group bg-transparent transition-colors group-focus-within:bg-gradient-to-r group-focus-within:from-[#09E65A] group-focus-within:to-[#16A34A]">
+                    <div className="flex items-center gap-2 rounded-full bg-white px-3 py-2 w-72 border border-neutral-200 transition-colors group-focus-within:border-transparent">
+                      <Search className="h-4 w-4 text-neutral-500 transition-colors group-focus-within:text-[#16A34A]" />
+                      <input
+                        className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-400 text-neutral-700"
+                        placeholder="Search stocks to return…"
+                        value={qReturn}
+                        onChange={(e) => setQReturn(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-neutral-50 text-neutral-600">
+                      <tr>
+                        <th className="text-left p-3">Inventory</th>
+                        <th className="text-left p-3">Quantity</th>
+                        <th className="text-left p-3">Status</th>
+                        <th className="text-right p-3">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!loading &&
+                        returnList.map((r) => {
+                          const status = computeStatus(r);
+                          const busy = !!returning[r._id];
+                          return (
+                            <tr key={r._id} className="border-t">
+                              <td className="p-3">
+                                <div className="font-medium text-neutral-800">{r.name || "—"}</div>
+                                <div className="text-xs text-neutral-500">
+                                  {(r.inventoryID || r._id) || "—"} · {r.category || "—"} · {r.location || "—"}
+                                </div>
+                              </td>
+                              <td className="p-3">{Math.max(0, Number(r.quantity || 0))}</td>
+                              <td className="p-3"><StatusPill value={status} /></td>
+                              <td className="p-3">
+                                <div className="flex items-center justify-end">
+                                  <button
+                                    onClick={() => onReturn(r)}
+                                    disabled={busy}
+                                    className="px-3 py-1.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
+                                  >
+                                    {busy ? "Returning…" : "Return"}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                      {!loading && returnList.length === 0 && (
+                        <tr>
+                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
+                            {rows.length === 0 ? "No inventory records." : "Nothing matches your search."}
+                          </td>
+                        </tr>
+                      )}
+
+                      {loading && (
+                        <tr>
+                          <td className="p-8 text-center text-neutral-500" colSpan={4}>
+                            Loading…
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Activity Logs */}
+          {tab === "Activity" && (
+            <div className={CARD}>
+              <div className="p-4 border-b">
+                <div className="font-medium">Activity Logs</div>
+                <p className="text-xs text-neutral-500">
+                  Local actions (Issue / Return) and system timestamps from rows.
+                </p>
+              </div>
+
+              {/* Local actions */}
+              <div className="p-4">
+                <div className="text-sm font-medium mb-2">Your Actions</div>
+                {activity.length === 0 ? (
+                  <div className="text-sm text-neutral-500">No recent actions.</div>
+                ) : (
+                  <ul className="text-sm space-y-2">
+                    {activity.slice(0, 50).map((e, i) => (
+                      <li key={i} className="rounded border p-2">
+                        <div className="text-neutral-700">
+                          <b>{e.action}</b> — {e.name || e.inventoryID || e.id}
+                        </div>
+                        <div className="text-xs text-neutral-500">
+                          {new Date(e.ts).toLocaleString()}
+                          {" · "}
+                          {e.action === "ISSUE"
+                            ? `qty ${e.qty} (from ${e.prevQty} → ${e.newQty})`
+                            : e.action === "RETURN"
+                            ? `removed qty ${e.qty ?? "—"}`
+                            : ""}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* System (from rows) */}
+              <div className="px-4 pb-4">
+                <div className="text-sm font-medium mb-2">System (Row Timestamps)</div>
+                <ul className="divide-y">
+                  {rows.slice(0, 50).map((r) => (
+                    <li key={r._id} className="py-2 text-sm">
+                      <span className="font-medium">{r.inventoryID || r._id}</span>
+                      <span className="text-neutral-500"> — {r.name} </span>
+                      <span className="text-neutral-500">· status </span>
+                      <span>{computeStatus(r)}</span>
+                      <span className="text-neutral-500"> · created </span>
+                      <span>{fmtDate(r.createdAt)}</span>
+                      <span className="text-neutral-500"> · updated </span>
+                      <span>{fmtDate(r.updatedAt)}</span>
+                    </li>
+                  ))}
+                  {rows.length === 0 && (
+                    <li className="py-2 text-neutral-500 text-sm">No system rows.</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
-      {/* Create Modal */}
-      {openCreate && (
-        <Modal title="Create Inventory Record" onClose={closeCreateModal}>
-          <form onSubmit={submitCreate} className="space-y-5">
-            <Section title="Item & Movement">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Field label="Item (ObjectId) *">
-                  <Input value={form.item} onChange={(e) => setForm({ ...form, item: e.target.value })} required />
-                </Field>
-                <Field label="Type *">
-                  <Select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} options={TYPE_OPTS} />
-                </Field>
-                <Field label="Status *">
-                  <Select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} options={STATUS_OPTS} />
-                </Field>
+      {/* Add Stock Modal */}
+      {showAddStockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-neutral-800">Add New Stock</h3>
+                <button
+                  onClick={() => setShowAddStockModal(false)}
+                  className="p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+                >
+                  <svg className="h-5 w-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            </Section>
 
-            <Section title="Details">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Field label="Name *">
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-                </Field>
-                <Field label="Category">
-                  <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-                </Field>
-                <Field label="Location">
-                  <Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-                </Field>
-                <Field label="Quantity *">
-                  <Input type="number" min={0} value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} required />
-                </Field>
-                <Field label="Unit Cost (LKR)">
-                  <Input type="number" min={0} step="0.01" value={form.unitCost} onChange={(e) => setForm({ ...form, unitCost: e.target.value })} />
-                </Field>
-                <div className="grid grid-cols-2 gap-3 sm:col-span-1">
-                  <Field label="Purchase Date">
-                    <Input type="date" value={form.purchaseDate} onChange={(e) => setForm({ ...form, purchaseDate: e.target.value })} />
-                  </Field>
-                  <Field label="Expiry Date">
-                    <Input type="date" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} />
-                  </Field>
+              <form onSubmit={onSubmitAddStock} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-neutral-700">Basic Information</h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Item Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={addStockForm.name}
+                        onChange={(e) => onChangeAddStock("name", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                        placeholder="Enter item name"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={addStockForm.category}
+                        onChange={(e) => onChangeAddStock("category", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                      >
+                        <option value="General">General</option>
+                        <option value="Food">Food</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Supplies">Supplies</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={addStockForm.location}
+                        onChange={(e) => onChangeAddStock("location", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                        placeholder="Main Warehouse"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quantity and Cost */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-neutral-700">Quantity & Cost</h4>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Quantity *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={addStockForm.quantity}
+                        onChange={(e) => onChangeAddStock("quantity", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                        placeholder="Enter quantity"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Unit Cost (LKR) *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={addStockForm.unitCost}
+                        onChange={(e) => onChangeAddStock("unitCost", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Purchase Date
+                      </label>
+                      <input
+                        type="date"
+                        value={addStockForm.purchaseDate}
+                        onChange={(e) => onChangeAddStock("purchaseDate", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        Expiry Date (Optional)
+                      </label>
+                      <input
+                        type="date"
+                        value={addStockForm.expiryDate}
+                        onChange={(e) => onChangeAddStock("expiryDate", e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <Field label="Description" className="sm:col-span-3">
-                  <Textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-                </Field>
-              </div>
-            </Section>
 
-            <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setForm(EMPTY)} className="px-4 py-2 rounded-xl border border-neutral-200">
-                Clear
-              </button>
-              <button type="submit" disabled={creating} className={`px-4 py-2 rounded-xl text-white ${GRAD_BG} disabled:opacity-60`}>
-                {creating ? "Creating…" : "Create"}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Edit/View Drawer */}
-      {drawer && (
-        <SlideOver title="Inventory Record" onClose={closeDrawer}>
-          <div className="space-y-4">
-            <div className="rounded-lg border p-3 text-sm">
-              <div className="font-medium mb-2">Identifiers</div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Field label="Inventory ID">
-                  <Input value={drawer.inventoryID || ""} disabled />
-                </Field>
-                <Field label="Record ID">
-                  <Input value={drawer._id || ""} disabled />
-                </Field>
-              </div>
-            </div>
-
-            <div className="rounded-lg border p-3 text-sm">
-              <div className="font-medium mb-2">Core</div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                <Field label="Item (ObjectId)">
-                  <Input value={drawer.item || ""} onChange={(e) => setDrawer({ ...drawer, item: e.target.value })} />
-                </Field>
-                <Field label="Type">
-                  <Select value={drawer.type} onChange={(e) => setDrawer({ ...drawer, type: e.target.value })} options={TYPE_OPTS} />
-                </Field>
-                <Field label="Status">
-                  <Select value={drawer.status} onChange={(e) => setDrawer({ ...drawer, status: e.target.value })} options={STATUS_OPTS} />
-                </Field>
-                <Field label="Name">
-                  <Input value={drawer.name || ""} onChange={(e) => setDrawer({ ...drawer, name: e.target.value })} />
-                </Field>
-                <Field label="Category">
-                  <Input value={drawer.category || ""} onChange={(e) => setDrawer({ ...drawer, category: e.target.value })} />
-                </Field>
-                <Field label="Location">
-                  <Input value={drawer.location || ""} onChange={(e) => setDrawer({ ...drawer, location: e.target.value })} />
-                </Field>
-                <Field label="Quantity">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={drawer.quantity ?? ""}
-                    onChange={(e) => setDrawer({ ...drawer, quantity: e.target.value })}
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={addStockForm.description}
+                    onChange={(e) => onChangeAddStock("description", e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#16A34A] focus:border-transparent"
+                    placeholder="Optional description..."
                   />
-                </Field>
-                <Field label="Unit Cost (LKR)">
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={drawer.unitCost ?? ""}
-                    onChange={(e) => setDrawer({ ...drawer, unitCost: e.target.value })}
-                  />
-                </Field>
-                <Field label="Purchase Date">
-                  <Input
-                    type="date"
-                    value={toISODateInput(drawer.purchaseDate)}
-                    onChange={(e) => setDrawer({ ...drawer, purchaseDate: e.target.value })}
-                  />
-                </Field>
-                <Field label="Expiry Date">
-                  <Input
-                    type="date"
-                    value={toISODateInput(drawer.expiryDate)}
-                    onChange={(e) => setDrawer({ ...drawer, expiryDate: e.target.value })}
-                  />
-                </Field>
-                <div className="sm:col-span-3">
-                  <Field label="Description">
-                    <Textarea
-                      rows={4}
-                      value={drawer.description || ""}
-                      onChange={(e) => setDrawer({ ...drawer, description: e.target.value })}
-                    />
-                  </Field>
                 </div>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeDrawer}
-                className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveDrawer}
-                disabled={savingDrawer}
-                className={`px-4 py-2 rounded-xl text-white ${GRAD_BG} disabled:opacity-60`}
-              >
-                {savingDrawer ? "Saving…" : "Save changes"}
-              </button>
+                {/* Submit Button */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddStockModal(false)}
+                    className="px-4 py-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingStock}
+                    className={`px-6 py-2 rounded-lg text-white font-medium ${
+                      submittingStock 
+                        ? "bg-neutral-400 cursor-not-allowed" 
+                        : `${GRAD_BG} hover:opacity-90`
+                    }`}
+                  >
+                    {submittingStock ? "Adding Stock..." : "Add Stock"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </SlideOver>
+        </div>
       )}
     </div>
   );
 }
 
-/* ---------- Vehicle-style sidebar bits ---------- */
+/* ---------- Sidebar bits ---------- */
 function AccordionHeader({ title, isOpen, onToggle, last = false }) {
   return (
     <button
@@ -997,7 +1225,7 @@ function RailLink({ to, icon, children }) {
   );
 }
 
-/* ---------- small UI bits (green focus) ---------- */
+/* ---------- small UI bits ---------- */
 function TopTab({ active, onClick, children }) {
   return (
     <button
@@ -1022,181 +1250,16 @@ function StatCardBig({ label, value }) {
     </div>
   );
 }
-function FilterChip({ label, value, onChange, options }) {
-  return (
-    <label className="inline-flex items-center gap-2 text-sm">
-      <span className="text-neutral-600 inline-flex items-center gap-1">
-        <Filter className="h-4 w-4" /> {label}
-      </span>
-      <select
-        className="rounded-lg border px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-function Section({ title, children }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <div className="text-sm font-medium mb-2">{title}</div>
-      {children}
-    </div>
-  );
-}
-function Field({ label, children, className = "" }) {
-  return (
-    <label className={`block ${className}`}>
-      <div className="text-sm font-medium mb-1">{label}</div>
-      {children}
-    </label>
-  );
-}
-function Input(props) {
-  return (
-    <input
-      {...props}
-      className={[
-        "w-full rounded-xl border border-neutral-200 px-3 py-2",
-        "placeholder:text-neutral-400 text-neutral-800",
-        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
-        props.disabled ? "bg-neutral-100 text-neutral-500" : "",
-      ].join(" ")}
-    />
-  );
-}
-function Textarea(props) {
-  return (
-    <textarea
-      {...props}
-      className={[
-        "w-full rounded-xl border border-neutral-200 px-3 py-2",
-        "placeholder:text-neutral-400 text-neutral-800",
-        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
-      ].join(" ")}
-    />
-  );
-}
-function Select({ value, onChange, options = [] }) {
-  return (
-    <select
-      value={value}
-      onChange={onChange}
-      className={[
-        "w-full rounded-xl border border-neutral-200 px-3 py-2",
-        "text-neutral-800 bg-white",
-        "focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30",
-      ].join(" ")}
-    >
-      {options.map((op) => (
-        <option key={op} value={op}>
-          {op}
-        </option>
-      ))}
-    </select>
-  );
-}
+function StatusPill({ value }) {
+  const v = (value || "in_stock").toLowerCase();
+  let cls = "bg-neutral-100 text-neutral-700 ring-neutral-200"; // default
+  if (v === "in_stock") cls = "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  else if (v === "out_of_stock") cls = "bg-amber-50 text-amber-700 ring-amber-200";
+  else if (v === "expired") cls = "bg-rose-50 text-rose-700 ring-rose-200";
 
-function StatusBars({ rows }) {
-  const counts = STATUS_OPTS.reduce((acc, s) => ((acc[s] = 0), acc), {});
-  rows.forEach((r) => {
-    counts[r.status] = (counts[r.status] || 0) + 1;
-  });
-  const data = STATUS_OPTS.map((s) => ({ name: s, value: counts[s] || 0 }));
-  const max = Math.max(1, ...data.map((d) => d.value));
   return (
-    <div className="space-y-2">
-      {data.map((d) => (
-        <div key={d.name} className="flex items-center gap-2">
-          <div className="w-28 text-xs text-neutral-600 capitalize">{d.name.replaceAll("_", " ")}</div>
-          <div className="flex-1 h-3 bg-neutral-100 rounded">
-            <div
-              className="h-3 rounded"
-              style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#09E65A,#16A34A)" }}
-            />
-          </div>
-          <div className="w-8 text-right text-xs text-neutral-700">{d.value}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-function TypeBars({ rows }) {
-  const counts = TYPE_OPTS.reduce((acc, t) => ((acc[t] = 0), acc), {});
-  rows.forEach((r) => {
-    counts[r.type] = (counts[r.type] || 0) + 1;
-  });
-  const data = TYPE_OPTS.map((t) => ({ name: t, value: counts[t] || 0 }));
-  const max = Math.max(1, ...data.map((d) => d.value));
-  return (
-    <div className="space-y-2">
-      {data.map((d) => (
-        <div key={d.name} className="flex items-center gap-2">
-          <div className="w-28 text-xs text-neutral-600">{d.name}</div>
-          <div className="flex-1 h-3 bg-neutral-100 rounded">
-            <div
-              className="h-3 rounded"
-              style={{ width: `${(d.value / max) * 100}%`, background: "linear-gradient(90deg,#09E65A,#16A34A)" }}
-            />
-          </div>
-          <div className="w-8 text-right text-xs text-neutral-700">{d.value}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ---------- Modal & SlideOver (green styling like ManageUser) ---------- */
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-[1000] flex items-start justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      {/* Frame */}
-      <div
-        className={`relative z-[1001] w-full max-w-3xl rounded-2xl p-[1px] ${GRAD_BG} shadow-2xl`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Card (scroll container) */}
-        <div className="rounded-2xl bg-white max-h-[85vh] flex flex-col">
-          {/* Sticky header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 sticky top-0 bg-white z-10">
-            <div className="font-semibold">{title}</div>
-            <button type="button" onClick={onClose} className="p-2 rounded-md hover:bg-neutral-100" aria-label="Close">
-              <X className="h-5 w-5 text-neutral-700" />
-            </button>
-          </div>
-
-          {/* Scrollable body */}
-          <div className="p-5 overflow-y-auto overscroll-contain">{children}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-function SlideOver({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-[1000]">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <aside
-        className="absolute right-0 top-0 h-full w-full sm:w-[480px] bg-white shadow-2xl flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-4 py-3 border-b flex items-center justify-between">
-          <div className="font-semibold">{title}</div>
-          <button type="button" onClick={onClose} className="p-2 rounded hover:bg-neutral-100" aria-label="Close">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        <div className="p-4 overflow-auto">{children}</div>
-      </aside>
-    </div>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset capitalize ${cls}`}>
+      {v.replaceAll("_", " ")}
+    </span>
   );
 }

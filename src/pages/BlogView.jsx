@@ -152,7 +152,7 @@ export default function BlogView() {
               <div className="px-6 md:px-8 pb-8 flex items-center justify-between">
                 <button
                   onClick={() => nav(-1)}
-                  className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50"
+                  className="px-4 py-2 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 cursor-pointer"
                 >
                   Back
                 </button>
@@ -164,7 +164,7 @@ export default function BlogView() {
                       () => toast.error("Failed to copy link")
                     );
                   }}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-white ${gradBG} hover:opacity-95 active:opacity-90 cursor-pointer`}
                 >
                   <Share2 size={16} /> Share
                 </button>

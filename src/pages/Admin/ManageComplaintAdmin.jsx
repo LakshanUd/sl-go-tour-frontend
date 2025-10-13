@@ -1,6 +1,6 @@
 // src/pages/Admin/ManageComplaintAdmin.jsx
 import { useEffect, useMemo, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -25,9 +25,15 @@ import {
   CalendarDays,
   FileText as FileTextIcon,
   BarChart3,
-  Bell,
-  Package,
-  Settings,
+  MapPin,
+  UtensilsCrossed,
+  Hotel,
+  Truck,
+  MessageSquare,
+  AlertCircle,
+  Boxes,
+  UserCog,
+  Bot,
 } from "lucide-react";
 import { confirmToast } from "../../components/ConfirmToast";
 
@@ -249,7 +255,7 @@ export default function ManageComplaintAdmin() {
         {/* ===== Sidebar (same pattern as other pages) ===== */}
         <aside className="lg:col-span-4 xl:col-span-3">
           <div className="rounded-xl border border-neutral-200 bg-white">
-            {/* Overview */}
+            {/* 01. Overview */}
             <AccordionHeader
               title="Overview"
               isOpen={open.overview}
@@ -257,13 +263,16 @@ export default function ManageComplaintAdmin() {
             />
             {open.overview && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Analytics</span>
+                <RailLink
+                  to="/admin/overview"
+                  icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Overview</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Content Management */}
+            {/* 02. Content Management */}
             <AccordionHeader
               title="Content Management"
               isOpen={open.content}
@@ -271,34 +280,64 @@ export default function ManageComplaintAdmin() {
             />
             {open.content && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/tour-packages"
+                  icon={<MapPin className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Tours</span>
                 </RailLink>
-                <RailLink to="/admin/manage-blogs" icon={<FileTextIcon className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-blogs"
+                  icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Blogs</span>
                 </RailLink>
-                <RailLink to="/admin/manage-meals" icon={<FileTextIcon className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-meals"
+                  icon={<UtensilsCrossed className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Meals</span>
                 </RailLink>
-                <RailLink to="/admin/manage-accommodations" icon={<FileTextIcon className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-accommodations"
+                  icon={<Hotel className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Accommodations</span>
                 </RailLink>
-                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-vehicles"
+                  icon={<Truck className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Vehicles</span>
                 </RailLink>
-                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Inventory</span>
-                </RailLink>                
-                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-feedbacks"
+                  icon={<MessageSquare className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Feedback</span>
                 </RailLink>
-                <RailLink to="/admin/manage-complaints" icon={<FileTextIcon className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-complaints"
+                  icon={<AlertCircle className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-inventory"
+                  icon={<Boxes className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-chatbot"
+                  icon={<Bot className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Manage Chatbot</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Operations Management */}
+            {/* 03. Operations Management */}
             <AccordionHeader
               title="Operations Management"
               isOpen={open.ops}
@@ -306,19 +345,28 @@ export default function ManageComplaintAdmin() {
             />
             {open.ops && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-users"
+                  icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Users</span>
                 </RailLink>
-                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-finance"
+                  icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Finance</span>
                 </RailLink>
-                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-bookings"
+                  icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Bookings</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Reports */}
+            {/* 04. Reports */}
             <AccordionHeader
               title="Reports"
               isOpen={open.reports}
@@ -326,13 +374,16 @@ export default function ManageComplaintAdmin() {
             />
             {open.reports && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/reports" icon={<FileTextIcon className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/reports"
+                  icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">All Reports</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Account Settings */}
+            {/* 05. Account Settings */}
             <AccordionHeader
               title="Account Settings"
               isOpen={open.account}
@@ -341,7 +392,10 @@ export default function ManageComplaintAdmin() {
             />
             {open.account && (
               <div className="px-3 pb-3">
-                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/profile/settings"
+                  icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Profile Settings</span>
                 </RailLink>
               </div>
@@ -393,6 +447,16 @@ export default function ManageComplaintAdmin() {
                 <Plus size={16} />
                 New
               </button>
+
+              {/* Report */}
+              <Link
+                to="/reports/complaints"
+                className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
+                title="View complaint reports"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Report
+              </Link>
             </div>
           </div>
 
@@ -447,8 +511,8 @@ export default function ManageComplaintAdmin() {
                 <thead className="bg-neutral-50 text-neutral-600">
                   <tr>
                     <th className="text-left p-3">User</th>
-                    <th className="text-left p-3">Service</th>
-                    <th className="text-left p-3">Category</th>
+                    <th className="text-left p-3">Title</th>
+                    <th className="text-left p-3">Section</th>
                     <th className="text-left p-3">Status</th>
                     <th className="text-left p-3">Created</th>
                     <th className="text-right p-3">Actions</th>
@@ -595,7 +659,7 @@ export default function ManageComplaintAdmin() {
           <div className={`w-full max-w-xl rounded-2xl p-[1px] ${GRAD_BG} shadow-2xl`}>
             <div className="rounded-2xl bg-white">
               <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200">
-                <div className="font-semibold">New Complaint (test)</div>
+                <div className="font-semibold">New Complaint</div>
                 <button className="p-2 rounded-lg hover:bg-neutral-100" onClick={() => setOpenCreate(false)}>
                   <X size={18} />
                 </button>
@@ -615,12 +679,29 @@ export default function ManageComplaintAdmin() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label>Service *</Label>
+                    <Label>Title *</Label>
                     <Input value={form.service} onChange={onChange("service")} placeholder="e.g., Tour Booking" required />
                   </div>
                   <div>
-                    <Label>Category *</Label>
-                    <Input value={form.category} onChange={onChange("category")} placeholder="e.g., Payment" required />
+                    <Label>Section *</Label>
+                    <select
+                      value={form.category}
+                      onChange={onChange("category")}
+                      required
+                      className="border rounded-md p-2 w-full"
+                    >
+                      <option value="" disabled>
+                        Select a section
+                      </option>
+                      <option value="Tour Package">Tour Package</option>
+                      <option value="Vehicle">Vehicle</option>
+                      <option value="Meals">Meals</option>
+                      <option value="Accommodation">Accommodation</option>
+                      <option value="Booking">Booking</option>
+                      <option value="Refund">Refund</option>
+                      <option value="Account Issue">Account Issue</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
                 </div>
 

@@ -142,12 +142,16 @@ export default function BlogsPublic() {
               key={b._id}
               className="bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:shadow-sm transition"
             >
-              <div className="aspect-[16/9] bg-neutral-50">
+              <Link
+                to={`/blogs/${b._id}`}
+                className="block aspect-[16/9] bg-neutral-50 cursor-pointer"
+                aria-label={`Open blog: ${b.title}`}
+              >
                 {b.image ? (
                   <img
                     src={b.image}
                     alt={b.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-opacity hover:opacity-95"
                     onError={(e) => {
                       e.currentTarget.src =
                         "https://via.placeholder.com/800x450?text=Blog";
@@ -158,7 +162,7 @@ export default function BlogsPublic() {
                     No image
                   </div>
                 )}
-              </div>
+              </Link>
 
               <div className="p-4 space-y-3">
                 <h3 className="font-semibold text-lg leading-snug line-clamp-2">

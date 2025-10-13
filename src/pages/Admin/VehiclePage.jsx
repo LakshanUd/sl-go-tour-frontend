@@ -11,11 +11,8 @@ import {
   Search,
   FileText,
   BarChart3,
-  Bell,
   ChevronRight,
   ChevronUp,
-  Package,
-  Settings,
   LayoutDashboard,
   Users,
   Wallet,
@@ -25,6 +22,15 @@ import {
   Gauge,
   Car as CarIcon,
   Tag as TagIcon,
+  MapPin,
+  UtensilsCrossed,
+  Hotel,
+  Truck,
+  MessageSquare,
+  AlertCircle,
+  Boxes,
+  UserCog,
+  Bot,
 } from "lucide-react";
 import { confirmToast } from "../../components/ConfirmToast";
 import MediaUpload from "../../utils/mediaUpload";
@@ -41,7 +47,7 @@ const LS_KEY = "adminSidebarOpen";
 
 /* ===== Vehicle dropdowns (defaults) ===== */
 const VEHICLE_TYPES = ["car", "van", "bus", "suv", "jeep", "minibus"];
-const VEHICLE_STATUSES = ["active", "inactive", "under_maintenance"];
+const VEHICLE_STATUSES = ["Available", "Unavailable", "under_maintenance"];
 
 /* ---------- API helper (uses .env) ---------- */
 const RAW_BASE =
@@ -102,7 +108,7 @@ const EMPTY = {
   type: "car",
   seatingCapacity: "",
   fuelType: "petrol",
-  status: "active",
+  status: "Available",
   price: "",
   images: "", // CSV in the form; array when sending
 };
@@ -231,7 +237,7 @@ export default function VehiclePage() {
         type: doc.type || "car",
         seatingCapacity: doc.seatingCapacity ?? "",
         fuelType: doc.fuelType || "petrol",
-        status: doc.status || "active",
+        status: doc.status || "Available",
         price: doc.price ?? "",
         images: Array.isArray(doc.images) ? doc.images.join(", ") : doc.images || "",
       });
@@ -326,7 +332,7 @@ export default function VehiclePage() {
         {/* ===== Sidebar (same pattern as AccommodationAdmin) ===== */}
         <aside className="lg:col-span-4 xl:col-span-3">
           <div className="rounded-xl border border-neutral-200 bg-white">
-            {/* Overview */}
+            {/* 01. Overview */}
             <AccordionHeader
               title="Overview"
               isOpen={open.overview}
@@ -334,13 +340,16 @@ export default function VehiclePage() {
             />
             {open.overview && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Analytics</span>
+                <RailLink
+                  to="/admin/overview"
+                  icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Overview</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Content Management */}
+            {/* 02. Content Management */}
             <AccordionHeader
               title="Content Management"
               isOpen={open.content}
@@ -348,34 +357,64 @@ export default function VehiclePage() {
             />
             {open.content && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/tour-packages"
+                  icon={<MapPin className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Tours</span>
                 </RailLink>
-                <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-blogs"
+                  icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Blogs</span>
                 </RailLink>
-                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-meals"
+                  icon={<UtensilsCrossed className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Meals</span>
                 </RailLink>
-                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-accommodations"
+                  icon={<Hotel className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Accommodations</span>
                 </RailLink>
-                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-vehicles"
+                  icon={<Truck className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Vehicles</span>
                 </RailLink>
-                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Inventory</span>
-                </RailLink>                
-                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-feedbacks"
+                  icon={<MessageSquare className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Feedback</span>
                 </RailLink>
-                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-complaints"
+                  icon={<AlertCircle className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-inventory"
+                  icon={<Boxes className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-chatbot"
+                  icon={<Bot className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Manage Chatbot</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Operations Management */}
+            {/* 03. Operations Management */}
             <AccordionHeader
               title="Operations Management"
               isOpen={open.ops}
@@ -383,19 +422,28 @@ export default function VehiclePage() {
             />
             {open.ops && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-users"
+                  icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Users</span>
                 </RailLink>
-                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-finance"
+                  icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Finance</span>
                 </RailLink>
-                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-bookings"
+                  icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Bookings</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Reports */}
+            {/* 04. Reports */}
             <AccordionHeader
               title="Reports"
               isOpen={open.reports}
@@ -403,13 +451,16 @@ export default function VehiclePage() {
             />
             {open.reports && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/reports"
+                  icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">All Reports</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Account Settings */}
+            {/* 05. Account Settings */}
             <AccordionHeader
               title="Account Settings"
               isOpen={open.account}
@@ -418,7 +469,10 @@ export default function VehiclePage() {
             />
             {open.account && (
               <div className="px-3 pb-3">
-                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/profile/settings"
+                  icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Profile Settings</span>
                 </RailLink>
               </div>
@@ -472,10 +526,11 @@ export default function VehiclePage() {
 
               {/* Report */}
               <Link
-                to="/admin/vehicles/report"
+                to="/reports/vehicles"
                 className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
-                title="Download report"
+                title="View vehicle reports"
               >
+                <BarChart3 className="h-4 w-4" />
                 Report
               </Link>
             </div>
@@ -849,13 +904,13 @@ function StatusPill({ status }) {
   let cls =
     "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ";
   switch (status) {
-    case "active":
+    case "Available":
       cls += "bg-emerald-50 text-emerald-700 ring-emerald-200";
       break;
     case "under_maintenance":
       cls += "bg-amber-50 text-amber-700 ring-amber-200";
       break;
-    case "inactive":
+    case "Unavailable":
     default:
       cls += "bg-rose-50 text-rose-700 ring-rose-200";
       break;

@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import {
   Eye,
   Search,
+  Calendar,
   CalendarDays,
   Clock,
   MapPin,
@@ -74,6 +75,8 @@ export default function TourPackageCustomer() {
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingPkg, setBookingPkg] = useState(null);
   const [passengers, setPassengers] = useState(1);
+  const [bookingDate, setBookingDate] = useState("");
+  const [calculatedEndDate, setCalculatedEndDate] = useState("");
 
   const navigate = useNavigate();
 
@@ -124,6 +127,8 @@ export default function TourPackageCustomer() {
   function openBooking(pkg) {
     setBookingPkg(pkg);
     setPassengers(1);
+    setBookingDate("");
+    setCalculatedEndDate("");
     setBookingOpen(true);
   }
 
@@ -131,6 +136,33 @@ export default function TourPackageCustomer() {
     setBookingOpen(false);
     setBookingPkg(null);
     setPassengers(1);
+    setBookingDate("");
+    setCalculatedEndDate("");
+  }
+
+  // Function to calculate end date based on tour duration
+  function calculateEndDate(startDate, duration) {
+    if (!startDate || !duration) return "";
+    
+    // Extract number of days from duration string (e.g., "3 days" -> 3)
+    const daysMatch = duration.match(/(\d+)/);
+    if (!daysMatch) return "";
+    
+    const days = parseInt(daysMatch[1]);
+    const start = new Date(startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + days - 1); // -1 because start date counts as day 1
+    
+    return end.toISOString().split('T')[0];
+  }
+
+  // Function to handle booking date change
+  function handleBookingDateChange(date) {
+    setBookingDate(date);
+    if (bookingPkg && date) {
+      const endDate = calculateEndDate(date, bookingPkg.duration);
+      setCalculatedEndDate(endDate);
+    }
   }
 
   async function confirmBooking() {
@@ -138,6 +170,10 @@ export default function TourPackageCustomer() {
     const qty = Number(passengers);
     if (!Number.isInteger(qty) || qty < 1) {
       toast.error("Please enter a valid number of passengers (at least 1)");
+      return;
+    }
+    if (!bookingDate) {
+      toast.error("Please select a booking date");
       return;
     }
     try {
@@ -154,6 +190,9 @@ export default function TourPackageCustomer() {
         unitPrice: Number(bookingPkg.price || 0),
         currency: "LKR",
         qty, // passengers count
+        startDate: bookingDate,
+        endDate: calculatedEndDate,
+        duration: bookingPkg.duration,
       });
       window.dispatchEvent(new CustomEvent("cart:changed"));
       toast.success("Tour added to cart");
@@ -401,6 +440,41 @@ export default function TourPackageCustomer() {
                       LKR {Number(bookingPkg.price || 0).toFixed(2)} per person
                     </div>
                   </div>
+
+                  <label className="block">
+                    <span className="block text-sm font-medium mb-1">Booking Date *</span>
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2 bg-white">
+                        <Calendar className="h-4 w-4 text-[#16A34A]" />
+                        <input
+                          type="date"
+                          value={bookingDate}
+                          onChange={(e) => handleBookingDateChange(e.target.value)}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="bg-transparent outline-none text-sm text-neutral-700"
+                        />
+                      </div>
+                      <span className="text-xs text-neutral-500">
+                        Select your preferred start date.
+                      </span>
+                    </div>
+                  </label>
+
+                  {calculatedEndDate && (
+                    <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-sm">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Calendar className="h-4 w-4" />
+                        <span className="font-medium">Tour Duration</span>
+                      </div>
+                      <div className="mt-1 text-blue-600">
+                        <div>Start: {new Date(bookingDate).toLocaleDateString()}</div>
+                        <div>End: {new Date(calculatedEndDate).toLocaleDateString()}</div>
+                        <div className="text-xs text-blue-500 mt-1">
+                          Duration: {bookingPkg.duration}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <label className="block">
                     <span className="block text-sm font-medium mb-1">Passengers *</span>

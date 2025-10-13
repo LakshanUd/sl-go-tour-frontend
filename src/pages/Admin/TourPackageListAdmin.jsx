@@ -19,14 +19,22 @@ import {
   LayoutDashboard,
   Users,
   Wallet,
+  Calendar,
   CalendarDays,
   FileText,
   BarChart3,
-  Bell,
   ChevronRight,
   ChevronUp,
   Package,
   Settings,
+  MapPin,
+  UtensilsCrossed,
+  Truck,
+  MessageSquare,
+  AlertCircle,
+  Boxes,
+  UserCog,
+  Bot,
 } from "lucide-react";
 import { confirmToast } from "../../components/ConfirmToast";
 
@@ -74,10 +82,15 @@ const ToursAPI = {
   remove: (id) => api.delete(`/api/tour-packages/${encodeURIComponent(id)}`),
 };
 
+const BookingAPI = {
+  list: () => api.get("/api/bookings"),
+};
+
 const TYPES = ["City Tour", "Village Tour", "Sea Tour", "Lagoon Tour"];
 
 export default function TourPackageListAdmin() {
   const [rows, setRows] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [type, setType] = useState("");
@@ -118,15 +131,38 @@ export default function TourPackageListAdmin() {
   async function load() {
     try {
       setLoading(true);
-      const res = await ToursAPI.list();
-      setRows(Array.isArray(res?.data) ? res.data : res?.data || []);
+      const [toursRes, bookingsRes] = await Promise.all([
+        ToursAPI.list(),
+        BookingAPI.list()
+      ]);
+      setRows(Array.isArray(toursRes?.data) ? toursRes.data : toursRes?.data || []);
+      setBookings(Array.isArray(bookingsRes?.data) ? bookingsRes.data : bookingsRes?.data || []);
     } catch {
       setRows([]);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
   }
   useEffect(() => { load(); }, []);
+
+  // Function to get bookings for a specific tour package
+  function getTourBookings(tourPackageId) {
+    return bookings.filter(booking => 
+      booking.items?.some(item => 
+        item.serviceType === "TourPackage" && 
+        String(item.tourPackage) === String(tourPackageId)
+      )
+    );
+  }
+
+  // Function to format date range
+  function formatDateRange(startDate, endDate) {
+    if (!startDate) return "—";
+    const start = new Date(startDate).toLocaleDateString();
+    const end = endDate ? new Date(endDate).toLocaleDateString() : start;
+    return start === end ? start : `${start} - ${end}`;
+  }
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -172,7 +208,7 @@ export default function TourPackageListAdmin() {
         {/* ===== Sidebar (matches AdminDashboard) ===== */}
         <aside className="lg:col-span-4 xl:col-span-3">
           <div className="rounded-xl border border-neutral-200 bg-white">
-            {/* Overview */}
+            {/* 01. Overview */}
             <AccordionHeader
               title="Overview"
               isOpen={open.overview}
@@ -180,13 +216,16 @@ export default function TourPackageListAdmin() {
             />
             {open.overview && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Analytics</span>
+                <RailLink
+                  to="/admin/overview"
+                  icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Overview</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Content Management */}
+            {/* 02. Content Management */}
             <AccordionHeader
               title="Content Management"
               isOpen={open.content}
@@ -194,34 +233,64 @@ export default function TourPackageListAdmin() {
             />
             {open.content && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/tour-packages"
+                  icon={<MapPin className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Tours</span>
                 </RailLink>
-                <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-blogs"
+                  icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Blogs</span>
                 </RailLink>
-                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-meals"
+                  icon={<UtensilsCrossed className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Meals</span>
                 </RailLink>
-                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-accommodations"
+                  icon={<Hotel className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Accommodations</span>
                 </RailLink>
-                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-vehicles"
+                  icon={<Truck className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Vehicles</span>
                 </RailLink>
-                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Inventory</span>
-                </RailLink>                
-                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-feedbacks"
+                  icon={<MessageSquare className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Feedback</span>
                 </RailLink>
-                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-complaints"
+                  icon={<AlertCircle className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-inventory"
+                  icon={<Boxes className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-chatbot"
+                  icon={<Bot className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Manage Chatbot</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Operations Management */}
+            {/* 03. Operations Management */}
             <AccordionHeader
               title="Operations Management"
               isOpen={open.ops}
@@ -229,19 +298,28 @@ export default function TourPackageListAdmin() {
             />
             {open.ops && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-users"
+                  icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Users</span>
                 </RailLink>
-                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-finance"
+                  icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Finance</span>
                 </RailLink>
-                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-bookings"
+                  icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Bookings</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Reports */}
+            {/* 04. Reports */}
             <AccordionHeader
               title="Reports"
               isOpen={open.reports}
@@ -249,13 +327,16 @@ export default function TourPackageListAdmin() {
             />
             {open.reports && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/reports"
+                  icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">All Reports</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Account Settings */}
+            {/* 05. Account Settings */}
             <AccordionHeader
               title="Account Settings"
               isOpen={open.account}
@@ -264,7 +345,10 @@ export default function TourPackageListAdmin() {
             />
             {open.account && (
               <div className="px-3 pb-3">
-                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/profile/settings"
+                  icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Profile Settings</span>
                 </RailLink>
               </div>
@@ -315,9 +399,9 @@ export default function TourPackageListAdmin() {
               <Link
                 to="/reports/tour-packages"
                 className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
-                title="Download report"
+                title="View tour package reports"
               >
-                <FileDown className="h-4 w-4" />
+                <BarChart3 className="h-4 w-4" />
                 Report
               </Link>
             </div>
@@ -385,6 +469,68 @@ export default function TourPackageListAdmin() {
                     <span className="inline-flex items-center gap-1"><Car className="h-3.5 w-3.5" /> {p.vehicles?.length || 0} veh</span>
                     <span className="inline-flex items-center gap-1"><Utensils className="h-3.5 w-3.5" /> {p.meals?.length || 0} meals</span>
                   </div>
+
+                  {/* Booking Information */}
+                  {(() => {
+                    const tourBookings = getTourBookings(p._id);
+                    if (tourBookings.length === 0) {
+                      return (
+                        <div className="mt-3 p-2 bg-neutral-50 border border-neutral-200 rounded text-xs text-neutral-500">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>No bookings yet</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="mt-3 space-y-1">
+                        <div className="text-xs font-medium text-neutral-700 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {tourBookings.length} booking{tourBookings.length !== 1 ? 's' : ''}
+                        </div>
+                        <div className="space-y-1 max-h-20 overflow-y-auto">
+                          {tourBookings.slice(0, 3).map((booking, idx) => {
+                            const tourItem = booking.items?.find(item => 
+                              item.serviceType === "TourPackage" && 
+                              String(item.tourPackage) === String(p._id)
+                            );
+                            return (
+                              <div key={booking._id} className="text-[10px] bg-blue-50 border border-blue-200 rounded p-1.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium text-blue-700">
+                                    {booking.customer?.firstName && booking.customer?.lastName 
+                                      ? `${booking.customer.firstName} ${booking.customer.lastName}`
+                                      : booking.customer?.name || "Customer"}
+                                  </span>
+                                  <span className={`px-1 py-0.5 rounded text-[9px] ${
+                                    booking.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                    booking.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {booking.status}
+                                  </span>
+                                </div>
+                                <div className="text-blue-600 mt-0.5">
+                                  {formatDateRange(tourItem?.startDate, tourItem?.endDate)}
+                                </div>
+                                <div className="text-blue-500">
+                                  {tourItem?.qty || 1} passenger{(tourItem?.qty || 1) !== 1 ? 's' : ''}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {tourBookings.length > 3 && (
+                            <div className="text-[10px] text-neutral-500 text-center py-1">
+                              +{tourBookings.length - 3} more booking{tourBookings.length - 3 !== 1 ? 's' : ''}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Actions */}
                   <div className="mt-4 flex items-center justify-between">

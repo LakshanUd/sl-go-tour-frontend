@@ -17,12 +17,18 @@ import {
   CalendarDays,
   FileText,
   BarChart3,
-  Bell,
   ChevronRight,
   ChevronUp,
-  Package,
-  Settings,
   RefreshCcw ,
+  MapPin,
+  UtensilsCrossed,
+  Hotel,
+  Truck,
+  MessageSquare,
+  AlertCircle,
+  Boxes,
+  UserCog,
+  Bot,
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
 import MediaUpload from "../../utils/mediaUpload.jsx";
@@ -301,7 +307,7 @@ export default function AccommodationAdmin() {
         {/* ===== Sidebar (matches AdminDashboard/Tours) ===== */}
         <aside className="lg:col-span-4 xl:col-span-3">
           <div className="rounded-xl border border-neutral-200 bg-white">
-            {/* Overview */}
+            {/* 01. Overview */}
             <AccordionHeader
               title="Overview"
               isOpen={open.overview}
@@ -309,13 +315,16 @@ export default function AccommodationAdmin() {
             />
             {open.overview && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/overview" icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Analytics</span>
+                <RailLink
+                  to="/admin/overview"
+                  icon={<LayoutDashboard className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Overview</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Content Management */}
+            {/* 02. Content Management */}
             <AccordionHeader
               title="Content Management"
               isOpen={open.content}
@@ -323,34 +332,64 @@ export default function AccommodationAdmin() {
             />
             {open.content && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/tour-packages" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/tour-packages"
+                  icon={<MapPin className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Tours</span>
                 </RailLink>
-                <RailLink to="/admin/manage-blogs" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-blogs"
+                  icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Blogs</span>
                 </RailLink>
-                <RailLink to="/admin/manage-meals" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-meals"
+                  icon={<UtensilsCrossed className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Meals</span>
                 </RailLink>
-                <RailLink to="/admin/manage-accommodations" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-accommodations"
+                  icon={<Hotel className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Accommodations</span>
                 </RailLink>
-                <RailLink to="/admin/manage-vehicles" icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-vehicles"
+                  icon={<Truck className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Vehicles</span>
                 </RailLink>
-                <RailLink to="/admin/manage-inventory" icon={<Package className={`h-4 w-4 ${ICON_COLOR}`} />}>
-                  <span className="whitespace-nowrap">Inventory</span>
-                </RailLink>
-                <RailLink to="/admin/manage-feedbacks" icon={<Bell className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-feedbacks"
+                  icon={<MessageSquare className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Feedback</span>
                 </RailLink>
-                <RailLink to="/admin/manage-complaints" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-complaints"
+                  icon={<AlertCircle className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Complaints</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-inventory"
+                  icon={<Boxes className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Inventory</span>
+                </RailLink>
+                <RailLink
+                  to="/admin/manage-chatbot"
+                  icon={<Bot className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Manage Chatbot</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Operations Management */}
+            {/* 03. Operations Management */}
             <AccordionHeader
               title="Operations Management"
               isOpen={open.ops}
@@ -358,19 +397,28 @@ export default function AccommodationAdmin() {
             />
             {open.ops && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/manage-users" icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-users"
+                  icon={<Users className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Users</span>
                 </RailLink>
-                <RailLink to="/admin/finance" icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-finance"
+                  icon={<Wallet className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Finance</span>
                 </RailLink>
-                <RailLink to="/admin/manage-bookings" icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/manage-bookings"
+                  icon={<CalendarDays className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Bookings</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Reports */}
+            {/* 04. Reports */}
             <AccordionHeader
               title="Reports"
               isOpen={open.reports}
@@ -378,13 +426,16 @@ export default function AccommodationAdmin() {
             />
             {open.reports && (
               <div className="px-3 pb-2">
-                <RailLink to="/admin/reports" icon={<FileText className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/admin/reports"
+                  icon={<BarChart3 className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">All Reports</span>
                 </RailLink>
               </div>
             )}
 
-            {/* Account Settings */}
+            {/* 05. Account Settings */}
             <AccordionHeader
               title="Account Settings"
               isOpen={open.account}
@@ -393,7 +444,10 @@ export default function AccommodationAdmin() {
             />
             {open.account && (
               <div className="px-3 pb-3">
-                <RailLink to="/profile/settings" icon={<Settings className={`h-4 w-4 ${ICON_COLOR}`} />}>
+                <RailLink
+                  to="/profile/settings"
+                  icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
                   <span className="whitespace-nowrap">Profile Settings</span>
                 </RailLink>
               </div>
@@ -448,9 +502,9 @@ export default function AccommodationAdmin() {
               <Link
                 to="/reports/accommodations"
                 className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm hover:bg-neutral-50"
-                title="Download report"
+                title="View accommodation reports"
               >
-                <FileDown className="h-4 w-4" />
+                <BarChart3 className="h-4 w-4" />
                 Report
               </Link>
             </div>

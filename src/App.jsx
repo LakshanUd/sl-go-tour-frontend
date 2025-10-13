@@ -31,6 +31,20 @@ import FinancialManageAdmin from "./pages/Admin/FinancialManageAdmin.jsx";
 import MonthlyReport from "./pages/MonthlyReport.jsx";
 import FinanceTransactionsReport from "./pages/reports/FinanceTransactionsReport.jsx";
 import ManageInventoryAdmin from "./pages/Admin/ManageInventoryAdmin.jsx";
+import ManageChatbot from "./pages/Admin/ManageChatbot.jsx";
+
+// Report pages
+import TourPackageReportPage from "./pages/reports/TourPackageReportPage.jsx";
+import AccommodationReportPage from "./pages/reports/AccommodationReportPage.jsx";
+import MealsReportPage from "./pages/reports/MealsReportPage.jsx";
+import BlogsReportPage from "./pages/reports/BlogsReportPage.jsx";
+import VehicleReportPage from "./pages/reports/VehicleReportPage.jsx";
+import FeedbacksReportPage from "./pages/reports/FeedbacksReportPage.jsx";
+import ComplaintsReportPage from "./pages/reports/ComplaintsReportPage.jsx";
+import InventoryReportPage from "./pages/reports/InventoryReportPage.jsx";
+import UsersReportPage from "./pages/reports/UsersReportPage.jsx";
+import FinanceReportPage from "./pages/reports/FinanceReportPage.jsx";
+import BookingsReportPage from "./pages/reports/BookingsReportPage.jsx";
 
 // Customers
 import CustomerPage from "./pages/CustomerPage.jsx";
@@ -40,6 +54,8 @@ import TourPackageCustomer from "./pages/TourPackageCustomer.jsx";
 import VehicleCustomer from "./pages/VehicleCustomer.jsx";
 import AccommodationCustomer from "./pages/AccommodationCustomer.jsx";
 import CustomerFeedback from "./pages/CustomerFeedback.jsx";
+import CustomerComplaint from "./pages/CustomerComplaint.jsx";
+import MyBookings from "./pages/MyBookings.jsx";
 import FeedbackPublic from "./pages/FeedbackPublic.jsx";
 import BlogView from "./pages/BlogView.jsx";
 
@@ -60,11 +76,13 @@ import ChefDashboard from "./pages/dashboards/ChefDashboard.jsx";
 import TourPackageManagerDashboard from "./pages/dashboards/TourPackageManagerDashboard.jsx";
 
 // Reports
-import VehicleReportPage from "./pages/reports/VehicleReportPage.jsx";
-import TourPackageReportPage from "./pages/reports/TourPackageReportPage.jsx";
-import AccommodationReportPage from "./pages/reports/AccommodationReportPage.jsx";
-import MealsReportPage from "./pages/reports/MealsReportPage.jsx";
-import BlogsReportPage from "./pages/reports/BlogsReportPage.jsx";
+
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentCancel from "./pages/PaymentCancel";
+
+/* --------- Small guard for /profile/settings if you want it protected ---------- */
+import ManageProfile from "./pages/ManageProfile.jsx";
+import ManageProfileCus from "./pages/ManageProfileCustomer.jsx";
 
 function App() {
   return (
@@ -79,9 +97,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/cart" element={<CartPage/>}/>
-
-        {/* ---------- Profile ---------- */}
-        <Route path="/profile/settings" element={<ManageProfileGuard /> } />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/cancel" element={<PaymentCancel />} />
 
         {/* ---------- Customer-facing ---------- */}
         <Route path="/customer" element={<CustomerPage />} />
@@ -100,6 +117,9 @@ function App() {
             </RoleRoute>
           }
         />
+
+        <Route path="/account/complaints" element= {<CustomerComplaint />} />
+        <Route path="/bookings" element={<MyBookings />} />
 
         {/* ---------- Tour Packages (public view + protected admin) ---------- */}
         <Route path="/tour-packages/:tourPakage_ID" element={<TourPackageView />} />
@@ -151,6 +171,16 @@ function App() {
         {/* ---------- Admin landing (redirects by role) ---------- */}
         <Route path="/admin/*" element={<AdminDashboard />} />
          <Route path="/admin/overview" element={<AdminDashboard />} />
+
+        {/* ---------- Role-specific dashboards ---------- */}
+        <Route path="/dash/admin" element={<AdminDashboard />} />
+        <Route path="/dash/vehicles" element={<VehicleManagerDashboard />} />
+        <Route path="/dash/accommodations" element={<AccommodationManagerDashboard />} />
+        <Route path="/dash/author" element={<AuthorDashboard />} />
+        <Route path="/dash/complaints-feedback" element={<ComplaintFeedbackManagerDashboard />} />
+        <Route path="/dash/inventory" element={<InventoryManagerDashboard />} />
+        <Route path="/dash/chef" element={<ChefDashboard />} />
+        <Route path="/dash/tours" element={<TourPackageManagerDashboard />} />
 
         {/* ---------- Admin tools (PROTECTED) ---------- */}
         <Route
@@ -227,20 +257,47 @@ function App() {
           }
         />
         <Route
-          path="/admin/financial-overview"
+          path="/admin/manage-finance"
           element={
             <RoleRoute roles={["Admin"]}>
               <FinancialManageAdmin />
             </RoleRoute>
           }
         />
+        <Route
+          path="/admin/manage-chatbot"
+          element={
+            <RoleRoute roles={["Admin"]}>
+              <ManageChatbot />
+            </RoleRoute>
+          }
+        />
 
         {/* ---------- Reports ---------- */}
-        <Route path="/admin/vehicles/report" element={<VehicleReportPage />} />
+        <Route
+          path="/admin/vehicles/report"
+          element={
+            <RoleRoute roles={["VC-Manager", "Admin"]}>
+              <VehicleReportPage />
+            </RoleRoute>
+          }
+        />
         <Route path="/reports/tour-packages" element={<TourPackageReportPage />} />
         <Route path="/reports/accommodations" element={<AccommodationReportPage />} />
         <Route path="/reports/meals" element={<MealsReportPage />} />
         <Route path="/reports/blogs" element={<BlogsReportPage />} />
+        <Route path="/reports/vehicles" element={<VehicleReportPage />} />
+        <Route path="/reports/feedbacks" element={<FeedbacksReportPage />} />
+        <Route path="/reports/complaints" element={<ComplaintsReportPage />} />
+        <Route path="/reports/inventory" element={<InventoryReportPage />} />
+        <Route path="/reports/users" element={<UsersReportPage />} />
+        <Route path="/reports/finance" element={<FinanceReportPage />} />
+        <Route path="/reports/bookings" element={<BookingsReportPage />} />
+
+        {/* ---------- Settings ---------- */}
+
+        <Route path="/profile/settings" element={<ManageProfile/>} />
+        <Route path="/profile/settings-cus" element={<ManageProfileCus/>} />
 
         {/* ---------- Fallback ---------- */}
         <Route path="*" element={<h1 className="p-6">404 Not Found</h1>} />
@@ -255,14 +312,3 @@ function App() {
 
 export default App;
 
-/* --------- Small guard for /profile/settings if you want it protected ---------- */
-import ManageProfile from "./pages/ManageProfile.jsx";
-import RoleRouteCore from "./components/RoleRoute.jsx"; // alias to avoid shadowing
-function ManageProfileGuard() {
-  // If only logged-in users should see profile:
-  return (
-    <RoleRouteCore roles={["Admin","AC-Manager","Author","CF-Manager","IN-Manager","Chef","TP-Manager","VC-Manager","Customer"]}>
-      <ManageProfile />
-    </RoleRouteCore>
-  );
-}
