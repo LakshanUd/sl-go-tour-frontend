@@ -86,7 +86,7 @@ const BookingAPI = {
   list: () => api.get("/api/bookings"),
 };
 
-const TYPES = ["City Tour", "Village Tour", "Sea Tour", "Lagoon Tour"];
+const TYPES = ["City Tour", "Village Tour", "Beach Tour", "Lagoon Tour"];
 
 export default function TourPackageListAdmin() {
   const [rows, setRows] = useState([]);
