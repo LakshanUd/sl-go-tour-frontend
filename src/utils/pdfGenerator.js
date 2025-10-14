@@ -753,13 +753,21 @@ export async function generateMealReportPDF(reportData) {
     { label: "Avg Order Value", value: formatMoney(reportData.avgOrderValue || 0) }
   ];
 
-  const mostOrderedData = reportData.mostOrdered || [];
-  const leastOrderedData = reportData.leastOrdered || [];
+  // Combine and deduplicate by _id (or name if _id missing)
+  const allMeals = [
+    ...(reportData.mostOrdered || []),
+    ...(reportData.leastOrdered || [])
+  ];
+  const uniqueMeals = allMeals.filter((meal, idx, arr) =>
+    idx === arr.findIndex(m =>
+      meal._id ? m._id === meal._id : m.name === meal.name
+    )
+  );
 
   return generateReportPDF({
     title: "Meal Orders Report",
     subtitle: "Most & Least Ordered Meals Analysis",
-    data: [...mostOrderedData, ...leastOrderedData],
+    data: uniqueMeals,
     stats,
     filename: `meal-orders-report-${Date.now()}.pdf`
   });
