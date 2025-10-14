@@ -99,7 +99,10 @@ const FinanceAPI = {
 
 /* ---------- Helpers ---------- */
 function fmtAmount(n) {
-  return (n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (Number(n) || 0).toLocaleString("en-LK", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 function toCSV(rows) {
   const headers = [
@@ -121,7 +124,7 @@ function toCSV(rows) {
       r.type || "",
       r.category || "",
       r.method || "",
-      Number(r.amount ?? 0),
+      Number(r.amount ?? 0), // keep raw number in CSV
       r.currency || "LKR",
       esc(r.reference || ""),
       esc(r.notes || ""),
@@ -196,25 +199,25 @@ export default function FinancialManageAdmin() {
   async function load() {
     try {
       setLoading(true);
-      
+
       // Fetch all data sources in parallel
       const [manualRes, bookingsRes, inventoryRes] = await Promise.all([
         FinanceAPI.list(),
         FinanceAPI.bookings(),
         FinanceAPI.inventoryExpenses()
       ]);
-      
+
       // Combine all transactions
       const manualTransactions = Array.isArray(manualRes?.data) ? manualRes.data : [];
       const bookingTransactions = Array.isArray(bookingsRes?.data) ? bookingsRes.data : [];
       const inventoryTransactions = Array.isArray(inventoryRes?.data) ? inventoryRes.data : [];
-      
+
       const allTransactions = [
         ...manualTransactions,
         ...bookingTransactions,
         ...inventoryTransactions
       ];
-      
+
       setRows(allTransactions);
     } catch {
       setRows([]);
@@ -263,12 +266,12 @@ export default function FinancialManageAdmin() {
     const total = rows.length;
     const incomeRows = rows.filter((r) => r.type === "income");
     const expenseRows = rows.filter((r) => r.type === "expense");
-    
+
     const inc = incomeRows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const exp = expenseRows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
     const incCount = incomeRows.length;
     const expCount = expenseRows.length;
-    
+
     return { total, inc, exp, incCount, expCount };
   }, [rows]);
 
@@ -358,7 +361,7 @@ export default function FinancialManageAdmin() {
     e.preventDefault();
     const err = validate();
     if (err) return toast.error(err);
-    
+
     // Auto-generate booking ID for income transactions
     let bookingID = null;
     if (form.type === "income") {
@@ -366,7 +369,7 @@ export default function FinancialManageAdmin() {
       const randomStr = Math.random().toString(36).slice(2, 6).toUpperCase();
       bookingID = `BK-${dateStr}-${randomStr}`;
     }
-    
+
     const payload = {
       date: new Date(form.date).toISOString(),
       type: form.type,
@@ -528,21 +531,21 @@ export default function FinancialManageAdmin() {
             )}
 
             {/* 04. Profile */}
-                        <AccordionHeader
-                          title="Account Settings"
-                          isOpen={open.reports}
-                          onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
-                        />
-                        {open.account && (
-                          <div className="px-3 pb-3">
-                            <RailLink
-                              to="/profile/settings"
-                              icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
-                            >
-                              <span className="whitespace-nowrap">Profile Settings</span>
-                            </RailLink>
-                          </div>
-                        )}
+            <AccordionHeader
+              title="Account Settings"
+              isOpen={open.reports}
+              onToggle={() => setOpen((s) => ({ ...s, reports: !s.reports }))}
+            />
+            {open.account && (
+              <div className="px-3 pb-3">
+                <RailLink
+                  to="/profile/settings"
+                  icon={<UserCog className={`h-4 w-4 ${ICON_COLOR}`} />}
+                >
+                  <span className="whitespace-nowrap">Profile Settings</span>
+                </RailLink>
+              </div>
+            )}
           </div>
         </aside>
 
@@ -630,15 +633,18 @@ export default function FinancialManageAdmin() {
             <>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <StatCardBig label="Total Transactions" value={counts.total} />
-                <StatCardBig label="Total Income" value={counts.inc} />
-                <StatCardBig label="Total Expense" value={counts.exp} />
+                <StatCardBig label="Total Income" value={`LKR ${fmtAmount(counts.inc)}`} />
+                <StatCardBig label="Total Expense" value={`LKR ${fmtAmount(counts.exp)}`} />
               </div>
-              
+
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCardBig label="Net Profit" value={counts.inc - counts.exp} />
+                <StatCardBig label="Net Profit" value={`LKR ${fmtAmount(counts.inc - counts.exp)}`} />
                 <StatCardBig label="Income Transactions" value={counts.incCount} />
                 <StatCardBig label="Expense Transactions" value={counts.expCount} />
-                <StatCardBig label="Average Income" value={counts.incCount > 0 ? Math.round(counts.inc / counts.incCount) : 0} />
+                <StatCardBig
+                  label="Average Income"
+                  value={`LKR ${fmtAmount(counts.incCount > 0 ? counts.inc / counts.incCount : 0)}`}
+                />
               </div>
 
               {/* Summary by Category */}
@@ -651,16 +657,16 @@ export default function FinancialManageAdmin() {
                       <div className="mt-2 space-y-1">
                         <div className="flex justify-between text-sm">
                           <span>Income:</span>
-                          <span className="text-green-600 font-medium">LKR {data.income.toFixed(2)}</span>
+                          <span className="text-green-600 font-medium">LKR {fmtAmount(data.income)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span>Expense:</span>
-                          <span className="text-red-600 font-medium">LKR {data.expense.toFixed(2)}</span>
+                          <span className="text-red-600 font-medium">LKR {fmtAmount(data.expense)}</span>
                         </div>
                         <div className="flex justify-between text-sm font-medium border-t pt-1">
                           <span>Net:</span>
                           <span className={data.income - data.expense >= 0 ? "text-green-600" : "text-red-600"}>
-                            LKR {(data.income - data.expense).toFixed(2)}
+                            LKR {fmtAmount(data.income - data.expense)}
                           </span>
                         </div>
                       </div>
@@ -676,10 +682,13 @@ export default function FinancialManageAdmin() {
             <>
               {/* Income Summary */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCardBig label="Total Income" value={counts.inc} />
+                <StatCardBig label="Total Income" value={`LKR ${fmtAmount(counts.inc)}`} />
                 <StatCardBig label="Income Transactions" value={counts.incCount} />
-                <StatCardBig label="Average Income" value={counts.incCount > 0 ? Math.round(counts.inc / counts.incCount) : 0} />
-                <StatCardBig label="This Month" value={monthlyIncome} />
+                <StatCardBig
+                  label="Average Income"
+                  value={`LKR ${fmtAmount(counts.incCount > 0 ? counts.inc / counts.incCount : 0)}`}
+                />
+                <StatCardBig label="This Month" value={`LKR ${fmtAmount(monthlyIncome)}`} />
               </div>
 
               {/* Income Table */}
@@ -706,7 +715,7 @@ export default function FinancialManageAdmin() {
                           <td className="p-3">{r.date?.slice(0, 10) || "—"}</td>
                           <td className="p-3">{r.category || "—"}</td>
                           <td className="p-3">{r.method || "—"}</td>
-                          <td className="p-3 font-medium text-green-600">LKR {Number(r.amount || 0).toFixed(2)}</td>
+                          <td className="p-3 font-medium text-green-600">LKR {fmtAmount(r.amount)}</td>
                           <td className="p-3">{r.bookingID || r.reference || "—"}</td>
                           <td className="p-3">{r.notes || "—"}</td>
                           <td className="p-3">
@@ -719,7 +728,7 @@ export default function FinancialManageAdmin() {
                                 <Pencil className="h-4 w-4 text-neutral-600" />
                               </button>
                               <button
-                                onClick={() => remove(r._id)}
+                                onClick={() => /* was remove(r._id) */ onDelete(r)}
                                 className="p-1 rounded hover:bg-neutral-100"
                                 title="Delete"
                               >
@@ -741,10 +750,13 @@ export default function FinancialManageAdmin() {
             <>
               {/* Expense Summary */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCardBig label="Total Expense" value={counts.exp} />
+                <StatCardBig label="Total Expense" value={`LKR ${fmtAmount(counts.exp)}`} />
                 <StatCardBig label="Expense Transactions" value={counts.expCount} />
-                <StatCardBig label="Average Expense" value={counts.expCount > 0 ? Math.round(counts.exp / counts.expCount) : 0} />
-                <StatCardBig label="This Month" value={monthlyExpense} />
+                <StatCardBig
+                  label="Average Expense"
+                  value={`LKR ${fmtAmount(counts.expCount > 0 ? counts.exp / counts.expCount : 0)}`}
+                />
+                <StatCardBig label="This Month" value={`LKR ${fmtAmount(monthlyExpense)}`} />
               </div>
 
               {/* Expense Table */}
@@ -771,7 +783,7 @@ export default function FinancialManageAdmin() {
                           <td className="p-3">{r.date?.slice(0, 10) || "—"}</td>
                           <td className="p-3">{r.category || "—"}</td>
                           <td className="p-3">{r.method || "—"}</td>
-                          <td className="p-3 font-medium text-red-600">LKR {Number(r.amount || 0).toFixed(2)}</td>
+                          <td className="p-3 font-medium text-red-600">LKR {fmtAmount(r.amount)}</td>
                           <td className="p-3">{r.bookingID || r.reference || "—"}</td>
                           <td className="p-3">{r.notes || "—"}</td>
                           <td className="p-3">
@@ -784,7 +796,7 @@ export default function FinancialManageAdmin() {
                                 <Pencil className="h-4 w-4 text-neutral-600" />
                               </button>
                               <button
-                                onClick={() => remove(r._id)}
+                                onClick={() => /* was remove(r._id) */ onDelete(r)}
                                 className="p-1 rounded hover:bg-neutral-100"
                                 title="Delete"
                               >
@@ -876,7 +888,7 @@ export default function FinancialManageAdmin() {
                             <td className="p-3"><TypePill type={r.type} /></td>
                             <td className="p-3">{r.category || "—"}</td>
                             <td className="p-3 capitalize">{r.method || "—"}</td>
-                            <td className="p-3">LKR {fmtAmount(Number(r.amount || 0))}</td>
+                            <td className="p-3">LKR {fmtAmount(r.amount)}</td>
                             <td className="p-3">{r.currency || "LKR"}</td>
                             <td className="p-3">{r.bookingID || r.reference || "—"}</td>
                             <td className="p-3 max-w-[28ch] truncate" title={r.notes || ""}>
