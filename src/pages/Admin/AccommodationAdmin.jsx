@@ -262,6 +262,7 @@ export default function AccommodationAdmin() {
     if (!form.name.trim()) return toast.error("Name is required");
     if (!form.type) return toast.error("Type is required");
     if (String(form.pricePerNight).trim() === "") return toast.error("Price per night is required");
+    if (Number(form.pricePerNight) <= 0) return toast.error("Price per night must be greater than 0");
     if (String(form.capacity).trim() === "") return toast.error("Capacity is required");
 
     try {
@@ -571,7 +572,7 @@ export default function AccommodationAdmin() {
                     {/* Price / Capacity / Status */}
                     <div className="mt-3 flex items-center justify-between">
                       <div className="text-sm font-medium text-neutral-900">
-                        LKR {Number(a.pricePerNight ?? 0).toFixed(2)} <span className="text-xs text-neutral-500">/night</span>
+                        LKR {Number(a.pricePerNight ?? 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs text-neutral-500">/night</span>
                       </div>
                       <div className="inline-flex items-center gap-1 text-xs text-neutral-700">
                         <UsersIcon className="h-3.5 w-3.5" /> {a.capacity || 0}
@@ -642,7 +643,7 @@ export default function AccommodationAdmin() {
                     <Input
                       value={form.name}
                       onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                      placeholder="Sunny Beach Resort"
+                      placeholder="R001"
                       required
                     />
                   </div>
@@ -659,7 +660,7 @@ export default function AccommodationAdmin() {
                     <Label>Price / Night (LKR) *</Label>
                     <Input
                       type="number"
-                      min={0}
+                      min={1}
                       value={form.pricePerNight}
                       onChange={(e) => setForm((f) => ({ ...f, pricePerNight: e.target.value }))}
                       placeholder="20000"

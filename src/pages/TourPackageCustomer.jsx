@@ -285,7 +285,7 @@ export default function TourPackageCustomer() {
                       {pkg.name}
                     </h3>
                     <span className="font-semibold text-emerald-600 shrink-0">
-                      LKR {Number(pkg.price || 0).toFixed(2)}
+                      LKR {Number(pkg.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
 
@@ -366,7 +366,7 @@ export default function TourPackageCustomer() {
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-xl font-semibold">{active.name}</h3>
                 <span className="font-semibold text-emerald-600">
-                  LKR {Number(active.price || 0).toFixed(2)}
+                LKR {Number(active.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
 
@@ -437,7 +437,7 @@ export default function TourPackageCustomer() {
                       {bookingPkg.tourPakage_ID} · {bookingPkg.type} · {bookingPkg.duration}
                     </div>
                     <div className="mt-1 font-semibold text-emerald-600">
-                      LKR {Number(bookingPkg.price || 0).toFixed(2)} per person
+                      LKR {Number(bookingPkg.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per person
                     </div>
                   </div>
 

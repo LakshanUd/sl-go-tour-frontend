@@ -9,7 +9,7 @@ import {
   TrendingDown,
   Calendar,
   Users,
-  DollarSign,
+  Wallet,
   Package,
   Download,
 } from "lucide-react";
@@ -133,7 +133,7 @@ export default function TourPackageReportPage() {
                 <tr key={idx} className="border-b border-neutral-100 hover:bg-neutral-50">
                   <td className="p-3 font-medium text-neutral-800">{item.name}</td>
                   <td className="p-3">{item.bookings || item.count || 0}</td>
-                  <td className="p-3">LKR {Number(item.revenue || 0).toFixed(2)}</td>
+                  <td className="p-3">LKR {Number(item.revenue || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">{item.duration || "—"}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -223,7 +223,7 @@ export default function TourPackageReportPage() {
           <StatCard
             title="Total Revenue"
             value={`LKR ${Number(reports.totalRevenue || 0).toLocaleString()}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="purple"
           />
           <StatCard

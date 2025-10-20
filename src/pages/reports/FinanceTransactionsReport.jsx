@@ -5,7 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { format, parseISO, isWithinInterval, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable"; // <-- IMPORTANT: use function import
-import { Download, Calendar, Filter, RefreshCw, DollarSign } from "lucide-react";
+import { Download, Calendar, Filter, RefreshCw, Wallet } from "lucide-react";
 
 /* ---------- Branding ---------- */
 const BRAND = {
@@ -337,7 +337,7 @@ export default function FinanceTransactionsReport() {
 
         <Labeled>
           <span className="inline-flex items-center gap-2 text-sm font-medium text-neutral-700">
-            <DollarSign className="h-4 w-4" /> Currency
+            <Wallet className="h-4 w-4" /> Currency
           </span>
           <select className="w-full rounded-lg border px-3 py-2" value={currency} onChange={(e) => setCurrency(e.target.value)}>
             {currencies.map((c) => (

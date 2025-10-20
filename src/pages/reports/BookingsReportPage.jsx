@@ -6,7 +6,7 @@ import {
   Calendar,
   TrendingUp,
   Users,
-  DollarSign,
+  Wallet,
   Download,
   BarChart3,
   RefreshCcw,
@@ -199,7 +199,7 @@ export default function BookingsReportPage() {
                     {item.date || item.period}
                   </td>
                   <td className="p-3">{item.bookings || item.count || 0}</td>
-                  <td className="p-3">LKR {Number(item.revenue || 0).toFixed(2)}</td>
+                  <td className="p-3">LKR {Number(item.revenue || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">{item.passengers || item.customers || 0}</td>
                   <td className="p-3">
                     <span className={statusPillCls(item.status || "confirmed")}>
@@ -370,7 +370,7 @@ export default function BookingsReportPage() {
             value={`LKR ${Number(
               reports.totalRevenue || totalRevenueFromList || 0
             ).toLocaleString()}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="green"
           />
         </div>
@@ -458,7 +458,7 @@ export default function BookingsReportPage() {
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-5 w-5 text-purple-600" />
+                  <Wallet className="h-5 w-5 text-purple-600" />
                   <span className="text-sm font-medium text-purple-800">
                     Avg Revenue/Day
                   </span>

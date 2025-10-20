@@ -655,7 +655,7 @@ export default function BookingManageAdmin() {
                               <td className="p-3">
                                 <div className="text-neutral-700">{itemSummary}</div>
                               </td>
-                              <td className="p-3">LKR {Number(amt || 0).toFixed(2)}</td>
+                              <td className="p-3">LKR {Number(amt || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                               <td className="p-3">
                                 <StatusBadge value={b.status} />
                               </td>
@@ -768,7 +768,7 @@ export default function BookingManageAdmin() {
                 {active.bookingID || active.bookingId || active._id || "—"}
               </InfoRow>
               <InfoRow icon={<Wallet className="h-4 w-4" />} label="Amount">
-                LKR {Number(totalAmount(active) || 0).toFixed(2)}
+                LKR {Number(totalAmount(active) || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </InfoRow>
               <InfoRow icon={<CalendarDays className="h-4 w-4" />} label="Created">
                 {active.createdAt ? new Date(active.createdAt).toLocaleString() : "—"}
@@ -806,7 +806,7 @@ export default function BookingManageAdmin() {
                       <div className="font-medium">
                         {capitalize(it.serviceType || it.type)} · {it.name || it.refName || it.refId}
                       </div>
-                      <div>LKR {Number(it.lineTotal || it.total || it.price || 0).toFixed(2)}</div>
+                      <div>LKR {Number(it.lineTotal || it.total || it.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     </div>
                     
                     {/* Tour Package Details */}

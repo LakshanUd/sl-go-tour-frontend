@@ -7,7 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
   Users,
-  DollarSign,
+  Wallet,
   Download,
   BarChart3,
   RefreshCcw,
@@ -257,7 +257,7 @@ export default function AccommodationReportPage() {
           <StatCard
             title="Total Revenue"
             value={`LKR ${Number(reports.totalRevenue || 0).toLocaleString()}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="purple"
           />
           <StatCard
@@ -353,7 +353,7 @@ export default function AccommodationReportPage() {
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-5 w-5 text-purple-600" />
+                  <Wallet className="h-5 w-5 text-purple-600" />
                   <span className="text-sm font-medium text-purple-800">Revenue per Property</span>
                 </div>
                 <span className="text-sm text-purple-600">LKR 45K/month</span>

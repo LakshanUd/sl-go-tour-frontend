@@ -56,6 +56,8 @@ const EMPTY = {
   currency: "LKR",
   reference: "",
   notes: "",
+  image1: null,
+  image2: null,
 };
 
 /* ---------- API base ---------- */
@@ -323,6 +325,8 @@ export default function FinancialManageAdmin() {
       currency: doc.currency || "LKR",
       reference: doc.reference || "",
       notes: doc.notes || "",
+      image1: doc.image1 || null,
+      image2: doc.image2 || null,
     });
     setOpenModal(true);
   }
@@ -348,6 +352,29 @@ export default function FinancialManageAdmin() {
   function onChange(k) {
     return (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   }
+
+  function onImageChange(imageKey) {
+    return (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast.error('Please select a valid image file');
+          return;
+        }
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error('Image size should be less than 5MB');
+          return;
+        }
+        setForm((f) => ({ ...f, [imageKey]: file }));
+      }
+    };
+  }
+
+  function removeImage(imageKey) {
+    setForm((f) => ({ ...f, [imageKey]: null }));
+  }
   function validate() {
     if (!form.date) return "Date is required";
     if (!TYPES.includes(form.type)) return "Invalid type";
@@ -370,6 +397,28 @@ export default function FinancialManageAdmin() {
       bookingID = `BK-${dateStr}-${randomStr}`;
     }
 
+    // Convert images to base64 if they exist
+    let image1Base64 = null;
+    let image2Base64 = null;
+    
+    if (form.image1) {
+      try {
+        image1Base64 = await convertToBase64(form.image1);
+      } catch (error) {
+        toast.error('Error processing image 1');
+        return;
+      }
+    }
+    
+    if (form.image2) {
+      try {
+        image2Base64 = await convertToBase64(form.image2);
+      } catch (error) {
+        toast.error('Error processing image 2');
+        return;
+      }
+    }
+
     const payload = {
       date: new Date(form.date).toISOString(),
       type: form.type,
@@ -380,6 +429,8 @@ export default function FinancialManageAdmin() {
       reference: form.reference || "",
       notes: form.notes || "",
       bookingID: bookingID,
+      image1: image1Base64,
+      image2: image2Base64,
     };
     try {
       setSubmitting(true);
@@ -397,6 +448,15 @@ export default function FinancialManageAdmin() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function convertToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
   }
 
   function exportCSV() {
@@ -1013,6 +1073,30 @@ export default function FinancialManageAdmin() {
               )}
             </Section>
 
+            <Section title="Attachments (Optional)">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Receipt/Invoice Image 1">
+                  <ImageUpload
+                    file={form.image1}
+                    onChange={onImageChange("image1")}
+                    onRemove={() => removeImage("image1")}
+                    placeholder="Upload receipt or invoice"
+                  />
+                </Field>
+                <Field label="Supporting Document Image 2">
+                  <ImageUpload
+                    file={form.image2}
+                    onChange={onImageChange("image2")}
+                    onRemove={() => removeImage("image2")}
+                    placeholder="Upload supporting document"
+                  />
+                </Field>
+              </div>
+              <div className="mt-2 text-xs text-neutral-500">
+                Supported formats: JPG, PNG, GIF. Max size: 5MB per image.
+              </div>
+            </Section>
+
             <div className="flex items-center justify-end gap-2">
               <button
                 type="button"
@@ -1205,6 +1289,62 @@ function TypePill({ type }) {
     >
       {isIncome ? "Income" : "Expense"}
     </span>
+  );
+}
+
+/* ---------- Image Upload Component ---------- */
+function ImageUpload({ file, onChange, onRemove, placeholder }) {
+  const [preview, setPreview] = useState(null);
+
+  useEffect(() => {
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => setPreview(e.target.result);
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
+  }, [file]);
+
+  return (
+    <div className="space-y-2">
+      {preview ? (
+        <div className="relative">
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-32 object-cover rounded-lg border border-neutral-200"
+          />
+          <button
+            type="button"
+            onClick={onRemove}
+            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+            title="Remove image"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6 6 18"></path>
+              <path d="M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <label className="block">
+          <div className="w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-neutral-400 transition-colors">
+            <svg className="h-8 w-8 text-neutral-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span className="text-sm text-neutral-500">{placeholder}</span>
+            <span className="text-xs text-neutral-400 mt-1">Click to upload</span>
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onChange}
+            className="hidden"
+          />
+        </label>
+      )}
+    </div>
   );
 }
 

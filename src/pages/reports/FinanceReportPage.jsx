@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import {
-  DollarSign,
+  Wallet,
   TrendingUp,
   TrendingDown,
   BarChart3,
@@ -134,7 +134,7 @@ export default function FinanceReportPage() {
               {data.map((item, idx) => (
                 <tr key={idx} className="border-b border-neutral-100 hover:bg-neutral-50">
                   <td className="p-3 font-medium text-neutral-800">{item.name || item.product}</td>
-                  <td className="p-3">LKR {Number(item.revenue || 0).toFixed(2)}</td>
+                  <td className="p-3">LKR {Number(item.revenue || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">{item.orders || item.count || 0}</td>
                   <td className="p-3">{item.category || "—"}</td>
                   <td className="p-3">
@@ -213,7 +213,7 @@ export default function FinanceReportPage() {
           <StatCard
             title="Total Revenue"
             value={`LKR ${Number(reports.totalRevenue || 0).toLocaleString()}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="green"
           />
           <StatCard
@@ -300,7 +300,7 @@ export default function FinanceReportPage() {
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-5 w-5 text-purple-600" />
+                  <Wallet className="h-5 w-5 text-purple-600" />
                   <span className="text-sm font-medium text-purple-800">Monthly Target</span>
                 </div>
                 <span className="text-sm text-purple-600">LKR 500K</span>

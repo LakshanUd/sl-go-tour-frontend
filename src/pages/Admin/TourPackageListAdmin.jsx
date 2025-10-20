@@ -200,6 +200,9 @@ export default function TourPackageListAdmin() {
     }
   }
 
+  // Validate package price where applicable when creating/editing elsewhere
+  // Note: This list page does not include create/edit forms; enforcement should exist in the editor page.
+
   return (
     <div className="min-h-screen bg-neutral-50 pt-24">
       <Toaster position="top-right" />
@@ -439,7 +442,7 @@ export default function TourPackageListAdmin() {
 
                   {/* Price / Duration */}
                   <div className="mt-3 flex items-center justify-between">
-                    <div className="text-sm font-medium text-neutral-900">LKR {Number(p.price ?? 0).toFixed(2)}</div>
+                    <div className="text-sm font-medium text-neutral-900">LKR {Number(p.price ?? 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <div className="inline-flex items-center gap-1 text-xs text-neutral-600">
                       <Clock className="h-3.5 w-3.5" /> {p.duration || "—"}
                     </div>

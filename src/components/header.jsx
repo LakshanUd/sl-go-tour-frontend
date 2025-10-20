@@ -279,96 +279,86 @@ export default function Header() {
                 </Link>
               )}
 
-              {/* User pill */}
-              <div className="relative user-menu-container">
+              {/* Login button when not logged in */}
+              {!user && (
                 <button
-                  onClick={() => setShowUserMenu((v) => !v)}
+                  onClick={handleLoginClick}
                   className={[
-                    "rounded-full p-[2px] cursor-pointer focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2",
-                    light ? "" : "focus-visible:ring-neutral-300 focus-visible:ring-offset-white",
+                    "inline-flex items-center gap-2 px-4 h-9 rounded-full font-medium text-sm transition border cursor-pointer",
+                    light
+                      ? "border-white/50 bg-white/10 hover:bg-white/15 backdrop-blur-md text-white"
+                      : "border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700",
                   ].join(" ")}
-                  aria-label="User menu"
-                  aria-expanded={showUserMenu}
+                  aria-label="Sign in"
                 >
-                <span
-                  className={[
-                      "h-9 w-9 inline-flex items-center justify-center rounded-full transition border",
-                      light
-                        ? "bg-white/10 text-white hover:bg-white/15 border-white/40 backdrop-blur-md"
-                        : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-200",
-                      user && isInDashboard
-                        ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A] text-white border-transparent"
-                        : "",
-                  ].join(" ")}
-                >
-                    {user ? (
+                  <LogIn className="h-4 w-4" />
+                  Login
+                </button>
+              )}
+
+              {/* User pill (only when logged in) */}
+              {user && (
+                <div className="relative user-menu-container">
+                  <button
+                    onClick={() => setShowUserMenu((v) => !v)}
+                    className={[
+                      "rounded-full p-[2px] cursor-pointer focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2",
+                      light ? "" : "focus-visible:ring-neutral-300 focus-visible:ring-offset-white",
+                    ].join(" ")}
+                    aria-label="User menu"
+                    aria-expanded={showUserMenu}
+                  >
+                  <span
+                    className={[
+                        "h-9 w-9 inline-flex items-center justify-center rounded-full transition border",
+                        light
+                          ? "bg-white/10 text-white hover:bg-white/15 border-white/40 backdrop-blur-md"
+                          : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-200",
+                        isInDashboard
+                          ? "bg-gradient-to-r from-[#09E65A] to-[#16A34A] text-white border-transparent"
+                          : "",
+                    ].join(" ")}
+                  >
                       <span className="text-l font-medium">
                         {user.firstName?.charAt(0)?.toUpperCase() ||
                           user.email?.charAt(0)?.toUpperCase()}
                       </span>
-                    ) : (
-                      <User className={light ? "h-4 w-4 text-white" : "h-4 w-4"} />
-                    )}
-                </span>
-                </button>
+                  </span>
+                  </button>
 
-                {/* Dropdown */}
-                {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-neutral-200 py-2 z-50">
-                    {user ? (
-                      <>
-                        <div className="px-3 py-2 border-b border-neutral-100">
-                          <p className="text-sm font-semibold text-neutral-900">
-                            {user.firstName} {user.lastName}
-                          </p>
-                          <p className="text-xs text-neutral-500">{user.email}</p>
-                          <p className="text-[11px] text-[#16A34A] font-medium">
-                            {user.role}
-                          </p>
-                        </div>
+                  {/* Dropdown */}
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-neutral-200 py-2 z-50">
+                      <div className="px-3 py-2 border-b border-neutral-100">
+                        <p className="text-sm font-semibold text-neutral-900">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-xs text-neutral-500">{user.email}</p>
+                        <p className="text-[11px] text-[#16A34A] font-medium">
+                          {user.role}
+                        </p>
+                      </div>
 
-                        <button
-                          onClick={handleGoDashboard}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 cursor-pointer"
-                          title="Go to dashboard"
-                        >
-                          <LayoutDashboard className="h-4 w-4 text-[#16A34A]" />
-                          Go to Dashboard
-                        </button>
+                      <button
+                        onClick={handleGoDashboard}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+                        title="Go to dashboard"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-[#16A34A]" />
+                        Go to Dashboard
+                      </button>
 
-                        <button
-                          onClick={handleLogout}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Logout
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            handleLoginClick();
-                            setShowUserMenu(false);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 cursor-pointer"
-                        >
-                          <LogIn className="h-4 w-4" />
-                          Sign In
-                        </button>
-                        <Link
-                          to="/register"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 cursor-pointer"
-                        >
-                          <User className="h-4 w-4" />
-                          Sign Up
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <button
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
 
           {/* Mobile menu button */}

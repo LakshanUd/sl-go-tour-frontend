@@ -8,7 +8,7 @@ import {
   TrendingDown,
   Car,
   Users,
-  DollarSign,
+  Wallet,
   Clock,
   Download,
 } from "lucide-react";
@@ -94,7 +94,7 @@ function VehicleTable({ data }) {
                   </span>
                 </td>
                 <td className="p-3">{vehicle.rentals || 0}</td>
-                <td className="p-3">LKR {Number(vehicle.revenue || 0).toFixed(2)}</td>
+                <td className="p-3">LKR {Number(vehicle.revenue || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
               </tr>
             ))}
           </tbody>
@@ -213,7 +213,7 @@ export default function VehicleReportPage() {
           <StatCard
             title="Total Revenue"
             value={`LKR ${Number(reports.totalRevenue || 0).toFixed(2)}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="purple"
           />
           <StatCard
@@ -287,7 +287,7 @@ export default function VehicleReportPage() {
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-purple-600" />
+                  <Wallet className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium text-purple-800">Revenue per Vehicle</span>
                 </div>
                 <span className="text-sm text-purple-600">LKR 45,000</span>

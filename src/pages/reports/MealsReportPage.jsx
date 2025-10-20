@@ -7,7 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
   Users,
-  DollarSign,
+  Wallet,
   Download,
   BarChart3,
   RefreshCcw,
@@ -135,7 +135,7 @@ export default function MealsReportPage() {
                 <tr key={idx} className="border-b border-neutral-100 hover:bg-neutral-50">
                   <td className="p-3 font-medium text-neutral-800">{item.name}</td>
                   <td className="p-3">{item.orders || item.count || 0}</td>
-                  <td className="p-3">LKR {Number(item.price || 0).toFixed(2)}</td>
+                  <td className="p-3">LKR {Number(item.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">{item.category || "—"}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -225,7 +225,7 @@ export default function MealsReportPage() {
           <StatCard
             title="Total Revenue"
             value={`LKR ${Number(reports.totalRevenue || 0).toLocaleString()}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="purple"
           />
           <StatCard
@@ -300,7 +300,7 @@ export default function MealsReportPage() {
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-5 w-5 text-purple-600" />
+                  <Wallet className="h-5 w-5 text-purple-600" />
                   <span className="text-sm font-medium text-purple-800">Price Range</span>
                 </div>
                 <span className="text-sm text-purple-600">LKR 500-1500</span>

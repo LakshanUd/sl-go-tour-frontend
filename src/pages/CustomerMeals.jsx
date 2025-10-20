@@ -319,7 +319,7 @@ export default function CustomerMeals() {
                   <span className="font-medium">{bookingMeal.name}</span>
                 </div>
                 <div className="text-xs text-neutral-500">
-                  Price: LKR {Number(bookingMeal.price || 0).toFixed(2)} per item
+                  Price: LKR {Number(bookingMeal.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per item
                 </div>
               </div>
               <div className="space-y-3">
@@ -404,7 +404,7 @@ export default function CustomerMeals() {
                   {active?.catogery || "—"}
                 </span>
                 <span className="font-semibold text-emerald-600">
-                  LKR {Number(active?.price || 0).toFixed(2)}
+                  LKR {Number(active?.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
 

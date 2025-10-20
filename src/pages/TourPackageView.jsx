@@ -114,7 +114,7 @@ export default function TourPackageView() {
 
           <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-neutral-700">
             <div className="inline-flex items-center gap-2"><Clock className="h-4 w-4" /> {doc.duration}</div>
-            <div className="font-semibold">LKR {Number(doc.price ?? 0).toFixed(2)}</div>
+            <div className="font-semibold">LKR {Number(doc.price ?? 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </div>
 
           <div className="mt-6 prose max-w-none">

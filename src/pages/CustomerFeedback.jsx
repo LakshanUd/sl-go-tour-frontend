@@ -130,6 +130,7 @@ export default function CustomerFeedback() {
     email: myEmail,
     message: "",
     rating: 5,
+    isAnonymous: false,
   });
 
   function resetForm() {
@@ -138,6 +139,7 @@ export default function CustomerFeedback() {
       email: myEmail,
       message: "",
       rating: 5,
+      isAnonymous: false,
     });
   }
 
@@ -200,6 +202,7 @@ export default function CustomerFeedback() {
       email: doc.email || myEmail,
       message: doc.message || "",
       rating: Number(doc.rating) || 5,
+      isAnonymous: String(doc.name || "").trim().toLowerCase() === "anonymous",
     });
     setOpenEdit(true);
   }
@@ -210,7 +213,6 @@ export default function CustomerFeedback() {
 
   async function saveFeedback(e) {
     e.preventDefault();
-    if (!String(form.message).trim()) return toast.error("Message is required");
     if (!form.rating || form.rating < 1 || form.rating > 5) return toast.error("Rating must be 1–5");
 
     try {
@@ -218,7 +220,7 @@ export default function CustomerFeedback() {
         const doc = mine.find((f) => f._id === editId);
         if (!doc) return toast.error("Not allowed to edit this feedback");
         await FeedbackAPI.update(editId, {
-          name: form.name || undefined,
+          name: form.isAnonymous ? "Anonymous" : (form.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")) || undefined,
           email: myEmail, // enforce my email on update
           message: form.message,
           rating: Number(form.rating),
@@ -226,7 +228,7 @@ export default function CustomerFeedback() {
         toast.success("Feedback updated");
       } else {
         await FeedbackAPI.create({
-          name: form.name || undefined,
+          name: form.isAnonymous ? "Anonymous" : (form.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")) || undefined,
           email: myEmail,
           message: form.message,
           rating: Number(form.rating),
@@ -572,28 +574,36 @@ export default function CustomerFeedback() {
                   </div>
 
                   <form onSubmit={saveFeedback} className="p-4 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Name</Label>
-                        <Input
-                          value={form.name}
-                          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                          placeholder="Your name"
+                    {/* Anonymous toggle (hide name/email inputs) */}
+                    <div className="flex items-center justify-between rounded-xl border border-neutral-200 p-3 bg-neutral-50">
+                      <div className="text-sm text-neutral-700">
+                        Post as <span className="font-medium">Anonymous</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, isAnonymous: !f.isAnonymous }))}
+                        aria-pressed={form.isAnonymous}
+                        className={[
+                          "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                          form.isAnonymous ? "bg-emerald-500" : "bg-neutral-300",
+                        ].join(" ")}
+                        title="Toggle Anonymous"
+                      >
+                        <span
+                          className={[
+                            "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
+                            form.isAnonymous ? "translate-x-5" : "translate-x-1",
+                          ].join(" ")}
                         />
-                      </div>
-                      <div>
-                        <Label>Email</Label>
-                        <Input value={myEmail} readOnly disabled />
-                      </div>
+                      </button>
                     </div>
 
                     <div>
-                      <Label>Message *</Label>
+                      <Label>Message</Label>
                       <Textarea
                         rows={5}
                         value={form.message}
                         onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                        required
                       />
                     </div>
 
@@ -684,6 +694,22 @@ function Row({ label, icon, children }) {
     </div>
   );
 }
+function ratingLabel(n) {
+  const x = Math.max(1, Math.min(5, Number(n)));
+  switch (x) {
+    case 1:
+      return "Poor";
+    case 2:
+      return "Below Average";
+    case 3:
+      return "Average";
+    case 4:
+      return "Good";
+    case 5:
+    default:
+      return "Excellent";
+  }
+}
 function StarRow({ value = 0 }) {
   const n = Math.max(0, Math.min(5, Number(value)));
   return (
@@ -691,7 +717,9 @@ function StarRow({ value = 0 }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star key={i} className={"h-4 w-4 " + (i < n ? "fill-current" : "")} />
       ))}
-      <span className="ml-1 text-xs text-neutral-700">{n}/5</span>
+      {n > 0 && (
+        <span className="ml-1 text-xs text-neutral-700">{ratingLabel(n)}</span>
+      )}
     </div>
   );
 }
@@ -711,7 +739,9 @@ function RatingPicker({ value, onChange }) {
           <Star className={"h-5 w-5 " + (n <= value ? "fill-current" : "")} />
         </button>
       ))}
-      <span className="ml-2 text-sm text-neutral-700">{value}/5</span>
+      {value ? (
+        <span className="ml-2 text-sm text-neutral-700">{ratingLabel(value)}</span>
+      ) : null}
     </div>
   );
 }

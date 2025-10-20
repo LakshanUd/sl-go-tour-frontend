@@ -23,7 +23,6 @@ import {
   UserCog,
   Bot,
   Eye,
-  DollarSign,
   Activity,
   Clock,
   Users,
@@ -231,8 +230,41 @@ export default function CustomerPage() {
       
       console.log('Open complaints count:', openComplaints);
 
-      // Generate mock data for charts
-      const mockData = CustomerAPI.generateMockData();
+      // Build dynamic Spending History from bookings (last 6 months)
+      const months = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now);
+        d.setMonth(d.getMonth() - i);
+        const key = d.toISOString().slice(0, 7); // YYYY-MM
+        months.push({ key, label: d.toLocaleDateString('en-US', { month: 'short' }) });
+      }
+
+      const totalAmount = (b) => (
+        b?.grandTotal ??
+        b?.totals?.grandTotal ??
+        b?.total ??
+        b?.amount ??
+        (Array.isArray(b?.items) ? b.items.reduce((s, it) => s + Number(it.lineTotal || it.total || it.price || 0), 0) : 0)
+      );
+
+      // Prefer bookings for current user if user email is available
+      const myEmailSafe = (user?.email || '').toLowerCase();
+      const myBookings = bookings.filter(b => {
+        const email = (b.customer?.email || b.customerEmail || b.userEmail || '').toLowerCase();
+        return myEmailSafe ? (email === myEmailSafe) : true;
+      });
+
+      const monthToAmount = Object.fromEntries(months.map(m => [m.key, 0]));
+      myBookings.forEach((b) => {
+        const d = new Date(b.createdAt || b.date || b.updatedAt || Date.now());
+        const key = d.toISOString().slice(0, 7);
+        if (key in monthToAmount) {
+          monthToAmount[key] += Number(totalAmount(b) || 0);
+        }
+      });
+
+      const spendingHistoryDynamic = months.map(m => ({ month: m.label, amount: Math.max(0, Number(monthToAmount[m.key] || 0)) }));
 
       setDashboardData({
         stats: {
@@ -242,8 +274,8 @@ export default function CustomerPage() {
           openComplaints,
         },
         recentBookings: bookings.slice(0, 5),
-        spendingHistory: mockData.spendingHistory,
-        favoriteDestinations: mockData.favoriteDestinations,
+        spendingHistory: spendingHistoryDynamic,
+        favoriteDestinations: CustomerAPI.generateMockData().favoriteDestinations,
         recentActivity: bookings.slice(0, 5), // Use bookings as recent activity
       });
     } catch (error) {
@@ -386,7 +418,7 @@ export default function CustomerPage() {
                 <StatCard
                   title="Total Spent"
                   value={`LKR ${dashboardData.stats.totalSpent.toLocaleString()}`}
-                  icon={DollarSign}
+                  icon={Wallet}
                   color="emerald"
                   trend="+12.3%"
                 />

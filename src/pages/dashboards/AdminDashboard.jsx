@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import {
   LayoutDashboard,
   Users,
-  Wallet,
   CalendarDays,
   FileText,
   BarChart3,
@@ -25,7 +24,7 @@ import {
   UserCog,
   Bot,
   Eye,
-  DollarSign,
+  Wallet,
   Activity,
   Clock,
 } from "lucide-react";
@@ -156,7 +155,7 @@ export default function AdminDashboard() {
         bookingReports,
         blogReports,
         financeSummary,
-        recentBookings,
+        bookingsRes,
       ] = await Promise.all([
         api.get("/api/reports/users"),
         api.get("/api/reports/bookings"),
@@ -165,27 +164,56 @@ export default function AdminDashboard() {
         api.get("/api/bookings").catch(() => ({ data: [] })),
       ]);
 
-      // Process user growth data (last 7 days)
-      const userGrowthData = [];
+      const allBookings = Array.isArray(bookingsRes?.data) ? bookingsRes.data : bookingsRes?.data?.bookings || [];
+
+      // Helper to get amount from booking
+      const totalAmount = (b) => (
+        b?.grandTotal ??
+        b?.totals?.grandTotal ??
+        b?.total ??
+        b?.amount ??
+        (Array.isArray(b?.items) ? b.items.reduce((s, it) => s + Number(it.lineTotal || it.total || it.price || 0), 0) : 0)
+      );
+
+      // Build last 7 day keys
       const today = new Date();
+      const dateKeys = [];
       for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        userGrowthData.push({
-          date: date.toISOString().split('T')[0],
-          users: Math.floor(Math.random() * 10) + 1, // Mock data - would need real API
-        });
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        dateKeys.push(d.toISOString().slice(0, 10));
       }
 
-      // Process revenue data (last 7 days)
-      const revenueData = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        revenueData.push({
-          date: date.toISOString().split('T')[0],
-          revenue: Math.floor(Math.random() * 50000) + 10000, // Mock data
+      // Aggregate revenue by day from bookings
+      const revMap = Object.fromEntries(dateKeys.map(k => [k, 0]));
+      allBookings.forEach((b) => {
+        const d = new Date(b.createdAt || b.date || b.updatedAt || Date.now());
+        const key = d.toISOString().slice(0, 10);
+        if (key in revMap) revMap[key] += Number(totalAmount(b) || 0);
+      });
+      const revenueData = dateKeys.map((k) => ({ date: k, revenue: revMap[k] }));
+
+      // User growth: prefer API daily series if provided, else approximate using unique customers per day from bookings
+      let userGrowthData = [];
+      const dailyFromAPI = userReports?.data?.daily || userReports?.data?.last7Days || [];
+      if (Array.isArray(dailyFromAPI) && dailyFromAPI.length) {
+        // normalize to { date, users }
+        const map = {};
+        dailyFromAPI.forEach((row) => {
+          const k = (row.date || row.day || row.d).toString().slice(0, 10);
+          const v = Number(row.count || row.users || row.value || 0);
+          map[k] = v;
         });
+        userGrowthData = dateKeys.map((k) => ({ date: k, users: map[k] ?? 0 }));
+      } else {
+        const userMap = Object.fromEntries(dateKeys.map(k => [k, new Set()]));
+        allBookings.forEach((b) => {
+          const d = new Date(b.createdAt || b.date || b.updatedAt || Date.now());
+          const key = d.toISOString().slice(0, 10);
+          const email = b.customer?.email || b.customerEmail || b.userEmail || b.customer?.id || b.userId || b._id;
+          if (key in userMap) userMap[key].add(email || Math.random());
+        });
+        userGrowthData = dateKeys.map((k) => ({ date: k, users: userMap[k].size }));
       }
 
       setDashboardData({
@@ -195,7 +223,7 @@ export default function AdminDashboard() {
           totalRevenue: bookingReports.data.totalRevenue || 0,
           totalBlogViews: blogReports.data.totalViews || 0,
         },
-        recentBookings: recentBookings.data.slice(0, 5) || [],
+        recentBookings: allBookings.slice(0, 5) || [],
         userGrowth: userGrowthData,
         revenueData: revenueData,
         topCountries: userReports.data.topCountries?.slice(0, 5) || [],
@@ -388,7 +416,7 @@ export default function AdminDashboard() {
             <StatCard
               title="Total Revenue"
               value={`LKR ${dashboardData.stats.totalRevenue.toLocaleString()}`}
-              icon={DollarSign}
+              icon={Wallet}
               color="emerald"
               trend="+15.3%"
             />

@@ -82,7 +82,12 @@ const InvAPI = {
 /* ---------- helpers ---------- */
 function fmtNum(n, digits = 2) {
   const v = Number(n);
-  return Number.isFinite(v) ? v.toFixed(digits) : "0.00";
+  if (!Number.isFinite(v)) return digits > 0 ? `0.${"0".repeat(digits)}` : "0";
+  try {
+    return v.toLocaleString("en-LK", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  } catch {
+    return v.toFixed(digits);
+  }
 }
 function fmtDate(d) {
   try {
@@ -442,8 +447,8 @@ export default function ManageInventoryAdmin() {
     if (!addStockForm.quantity || Number(addStockForm.quantity) <= 0) {
       return toast.error("Valid quantity is required");
     }
-    if (!addStockForm.unitCost || Number(addStockForm.unitCost) < 0) {
-      return toast.error("Valid unit cost is required");
+    if (!addStockForm.unitCost || Number(addStockForm.unitCost) <= 0) {
+      return toast.error("Unit cost must be greater than 0");
     }
 
     try {
@@ -1049,7 +1054,7 @@ export default function ManageInventoryAdmin() {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-neutral-800">Add New Stock</h3>
+                <h3 className="text-xl font-semibold text-neutral-800">Add New Item</h3>
                 <button
                   onClick={() => setShowAddStockModal(false)}
                   className="p-2 rounded-lg hover:bg-neutral-100 transition-colors"
@@ -1143,7 +1148,7 @@ export default function ManageInventoryAdmin() {
                       </label>
                       <input
                         type="number"
-                        min="0"
+                        min="0.01"
                         step="0.01"
                         value={addStockForm.unitCost}
                         onChange={(e) => onChangeAddStock("unitCost", e.target.value)}

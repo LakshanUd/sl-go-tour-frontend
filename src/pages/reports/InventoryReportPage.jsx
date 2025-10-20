@@ -11,7 +11,7 @@ import {
   BarChart3,
   RefreshCcw,
   Clock,
-  DollarSign,
+  Wallet,
 } from "lucide-react";
 import { generateInventoryReportPDF } from "../../utils/pdfGenerator";
 
@@ -135,7 +135,7 @@ export default function InventoryReportPage() {
                 <tr key={idx} className="border-b border-neutral-100 hover:bg-neutral-50">
                   <td className="p-3 font-medium text-neutral-800">{item.name}</td>
                   <td className="p-3">{item.quantity || item.count || 0}</td>
-                  <td className="p-3">LKR {Number(item.unitCost || 0).toFixed(2)}</td>
+                  <td className="p-3">LKR {Number(item.unitCost || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   <td className="p-3">{item.category || "—"}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs ${
@@ -222,7 +222,7 @@ export default function InventoryReportPage() {
           <StatCard
             title="Total Value"
             value={`LKR ${Number(reports.totalValue || 0).toLocaleString()}`}
-            icon={DollarSign}
+            icon={Wallet}
             color="green"
           />
           <StatCard

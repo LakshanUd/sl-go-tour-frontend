@@ -4,13 +4,11 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { useGoogleLogin } from "@react-oauth/google";
-import { LogIn, ShieldCheck, Sparkles, Eye, EyeOff } from "lucide-react";
+import { LogIn, ShieldCheck, Sparkles, Eye, EyeOff, Lock, Mail } from "lucide-react";
 
-const GRAD_FROM = "from-[#09E65A]";
-const GRAD_TO = "to-[#16A34A]";
-const GRAD_BG = `bg-gradient-to-r ${GRAD_FROM} ${GRAD_TO}`;
-const GLASS =
-  "backdrop-blur-xl bg-white/70 supports-[backdrop-filter]:bg-white/60 border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)]";
+const PRIMARY_GREEN = "#10b981";
+const DARK_GREEN = "#059669";
+const LIGHT_GREEN = "#34d399";
 
 /* ---------- API base ---------- */
 const RAW_BASE =
@@ -124,178 +122,227 @@ export default function LoginPage() {
     : null;
 
   return (
-    <div className="relative min-h-screen overflow-hidden pt-24">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-green-50 pt-24">
       <Toaster position="top-right" />
 
-      {/* Vivid gradient backdrop */}
-      <div className={`absolute inset-0 ${GRAD_BG} opacity-90`} />
+      {/* Animated gradient orbs */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob" />
+      <div className="absolute top-0 right-0 w-96 h-96 bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000" />
+      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-teal-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000" />
 
-      {/* Subtle grid overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.15] pointer-events-none"
+      {/* Subtle pattern overlay */}
+      <div 
+        className="absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, #fff 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }}
       />
 
-      {/* Animated blobs */}
-      <Blob className="left-[-6rem] top-[-6rem]" size={420} delay={0} />
-      <Blob className="right-[-8rem] bottom-[-8rem]" size={520} delay={4} />
-
       {/* Content */}
       <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left panel — brand / copy */}
-          <div className="hidden lg:flex flex-col justify-center text-white/95">
-            <div className="flex items-center gap-3">
-              <div className="h-11 w-11 rounded-2xl bg-white/10 border border-white/20 grid place-items-center">
-                <Sparkles className="h-6 w-6" />
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          
+          {/* Left panel — brand showcase */}
+          <div className="hidden lg:flex flex-col justify-center space-y-8">
+            {/* Logo & Brand */}
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg border border-emerald-100">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 grid place-items-center shadow-lg">
+                  <Sparkles className="h-6 w-6 text-white" strokeWidth={2.5} />
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900 tracking-tight">
+                    GoTour
+                  </div>
+                  <div className="text-xs font-medium text-emerald-600 tracking-wide">
+                    TOUR MANAGEMENT SYSTEM
+                  </div>
+                </div>
               </div>
-              <div className="text-2xl font-semibold tracking-tight">
-                GoTour <span className="opacity-80">TMS</span>
+
+              {/* Headline */}
+              <div className="space-y-4">
+                <h1 className="text-5xl font-bold text-gray-900 leading-tight">
+                  Manage Your
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-600">
+                    Journeys with Ease
+                  </span>
+                </h1>
+                <p className="text-lg text-gray-600 leading-relaxed max-w-md">
+                  One powerful dashboard for tours, vehicles, accommodations, bookings, and more — designed for efficiency and simplicity.
+                </p>
               </div>
-            </div>
 
-            <h1 className="mt-6 text-4xl font-semibold leading-tight">
-              Sign in to manage your{" "}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
-                journeys
-              </span>
-              .
-            </h1>
-            <p className="mt-3 text-white/85">
-              One dashboard for tours, vehicles, stays, bookings & more — built
-              for speed, security, and simplicity.
-            </p>
-
-            <div className="mt-6 inline-flex items-center gap-2 text-white/90 text-sm">
-              <ShieldCheck className="h-4 w-4" />
-              Enterprise-grade security & privacy-first design.
+              {/* Features */}
+              <div className="space-y-3 pt-2">
+                <FeatureItem icon={ShieldCheck} text="Enterprise-grade security" />
+                <FeatureItem icon={Sparkles} text="Intuitive user experience" />
+                <FeatureItem icon={LogIn} text="Quick & secure authentication" />
+              </div>
             </div>
           </div>
 
           {/* Right panel — login card */}
           <div className="w-full">
-            <div className="rounded-2xl p-[1px] bg-white/20">
-              <div className={`rounded-2xl ${GLASS}`}>
-                {/* Card header */}
-                <div className="px-6 pt-6 pb-3">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-neutral-900">
-                      Welcome back
-                    </h2>
-                    <div className={`h-1.5 w-16 rounded-full ${GRAD_BG}`} />
+            <div className="mx-auto max-w-md">
+              {/* Mobile logo */}
+              <div className="lg:hidden flex justify-center mb-8">
+                <div className="inline-flex items-center gap-3 px-4 py-3 rounded-2xl bg-white shadow-lg border border-emerald-100">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 grid place-items-center">
+                    <Sparkles className="h-5 w-5 text-white" strokeWidth={2.5} />
                   </div>
-          </div>
+                  <div>
+                    <div className="text-xl font-bold text-gray-900">GoTour</div>
+                    <div className="text-[10px] font-medium text-emerald-600 tracking-wide">TMS</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Login card */}
+              <div className="rounded-3xl bg-white shadow-2xl border border-gray-100 overflow-hidden">
+                {/* Card header */}
+                <div className="px-8 pt-8 pb-6 bg-gradient-to-br from-emerald-50 to-green-50 border-b border-gray-100">
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Welcome Back
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      Sign in to access your dashboard
+                    </p>
+                  </div>
+                </div>
 
                 {/* Card body */}
-                <div className="px-6 pb-6 space-y-4" onKeyDown={onKeyDown}>
-            <div>
-                    <label className="block text-sm font-medium mb-1.5 text-neutral-800">
-                      Email
+                <div className="px-8 py-8 space-y-5" onKeyDown={onKeyDown}>
+                  {/* Email field */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Email Address
                     </label>
-              <input
-                type="email"
-                      autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                      className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
-                placeholder="you@example.com"
-                      required
-              />
-            </div>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Mail className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="email"
+                        autoComplete="username"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        placeholder="you@example.com"
+                        required
+                      />
+                    </div>
+                  </div>
 
-            <div>
-                    <label className="block text-sm font-medium mb-1.5 text-neutral-800">
+                  {/* Password field */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">
                       Password
                     </label>
                     <div className="relative">
-              <input
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
                         type={showPw ? "text" : "password"}
                         autoComplete="current-password"
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                        className="w-full rounded-xl border border-neutral-300/70 bg-white/80 px-3 py-2 pr-10 placeholder:text-neutral-400 text-neutral-800 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/40"
-                placeholder="••••••••"
+                        minLength={6}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-10 pr-12 py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        placeholder="••••••••"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPw((s) => !s)}
-                        className="absolute inset-y-0 right-2 my-auto text-xs px-2 py-1 rounded-md text-neutral-600 hover:bg-neutral-100 cursor-pointer"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                       >
-                        {showPw ? <EyeOff className="h-4 w-4 text-neutral-600" />
-                         : <Eye className="h-4 w-4 text-neutral-600" />}
+                        {showPw ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
                       </button>
                     </div>
-                    <div className="mt-1 text-right">
+                    <div className="flex justify-end">
                       <Link
                         to="/forgot-password"
-                        className="text-xs text-[#6b21a8] hover:underline cursor-pointer"
+                        className="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
                       >
                         Forgot password?
                       </Link>
                     </div>
-            </div>
-
-            <button
-                    onClick={handleLogin}
-                    disabled={loading}
-                    className={`w-full rounded-xl py-2.5 text-white ${GRAD_BG} hover:opacity-95 active:opacity-90 disabled:opacity-60 inline-flex items-center justify-center gap-2 cursor-pointer`}
-                  >
-                    <LogIn className="h-4 w-4" />
-              {loading ? "Signing in…" : "Sign in"}
-            </button>
-
-                  <div className="flex items-center gap-3">
-                    <div className="h-px bg-neutral-200 flex-1" />
-                    <span className="text-xs text-neutral-500">or</span>
-                    <div className="h-px bg-neutral-200 flex-1" />
                   </div>
 
+                  {/* Sign in button */}
+                  <button
+                    onClick={handleLogin}
+                    disabled={loading}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 hover:from-emerald-600 hover:to-green-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <LogIn className="h-5 w-5" />
+                    {loading ? "Signing in..." : "Sign In"}
+                  </button>
+
+                  {/* Divider */}
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-4 bg-white text-gray-500 font-medium">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Google sign in */}
                   {GOOGLE_ENABLED ? (
                     <button
                       type="button"
                       onClick={() => doGoogleLogin && doGoogleLogin()}
                       disabled={gLoading}
-                      className="w-full rounded-xl py-2.5 border border-neutral-300/70 bg-white/85 hover:bg-white text-neutral-800 disabled:opacity-60 inline-flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full py-3.5 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed transition-all inline-flex items-center justify-center gap-3 font-medium text-gray-700 cursor-pointer"
                     >
                       <GoogleIcon />
-                      {gLoading ? "Connecting to Google…" : "Continue with Google"}
+                      {gLoading ? "Connecting..." : "Sign in with Google"}
                     </button>
                   ) : (
-                    <div className="text-xs text-neutral-500 text-center">
-                      Google login not configured.
+                    <div className="text-sm text-gray-500 text-center py-2">
+                      Google login not configured
                     </div>
                   )}
+                </div>
 
-                  <p className="text-xs text-neutral-500 text-center">
-                    By continuing you agree to our{" "}
-                    <Link to="/legal/terms" className="underline cursor-pointer">
-                      Terms
+                {/* Card footer */}
+                <div className="px-8 py-6 bg-gray-50 border-t border-gray-100">
+                  <p className="text-xs text-gray-500 text-center leading-relaxed">
+                    By continuing, you agree to our{" "}
+                    <Link to="/legal/terms" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
+                      Terms of Service
                     </Link>{" "}
-                    &{" "}
-                    <Link to="/legal/privacy" className="underline cursor-pointer">
+                    and{" "}
+                    <Link to="/legal/privacy" className="text-emerald-600 hover:text-emerald-700 font-medium underline">
                       Privacy Policy
                     </Link>
-                    .
                   </p>
                 </div>
               </div>
-            </div>
 
-            {/* Bottom links */}
-            <div className="mt-4 text-center text-sm text-white/90">
-              New here?{" "}
-              <Link
-                to="/register"
-                className="underline decoration-white/70 hover:decoration-white cursor-pointer"
-              >
-                Create an account
-              </Link>
+              {/* Register link */}
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600">
+                  New to GoTour?{" "}
+                  <Link
+                    to="/register"
+                    className="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                  >
+                    Create an account
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -304,32 +351,24 @@ export default function LoginPage() {
   );
 }
 
-/* ====== Tiny blob component (animated gradient circle) ====== */
-function Blob({ className = "", size = 420, delay = 0 }) {
+/* Feature item component */
+function FeatureItem({ icon: Icon, text }) {
   return (
-    <div
-      className={[
-        "absolute rounded-full blur-3xl opacity-40",
-        "animate-[float_12s_ease-in-out_infinite]",
-        className,
-      ].join(" ")}
-      style={{
-        width: size,
-        height: size,
-        background:
-          "radial-gradient(circle at 30% 30%, #ffffff, rgba(255,255,255,0.25) 40%, rgba(255,255,255,0) 60%)",
-        animationDelay: `${delay}s`,
-      }}
-    />
+    <div className="flex items-center gap-3 text-gray-700">
+      <div className="h-8 w-8 rounded-lg bg-emerald-100 grid place-items-center flex-shrink-0">
+        <Icon className="h-4 w-4 text-emerald-600" strokeWidth={2.5} />
+      </div>
+      <span className="text-sm font-medium">{text}</span>
+    </div>
   );
 }
 
-/* Inline Google 'G' icon (no extra deps) */
+/* Google icon component */
 function GoogleIcon() {
   return (
     <svg
       viewBox="0 0 533.5 544.3"
-      className="h-4 w-4"
+      className="h-5 w-5"
       aria-hidden="true"
       focusable="false"
     >
@@ -353,9 +392,32 @@ function GoogleIcon() {
   );
 }
 
-/* Add this in your global CSS (or Tailwind layer)
-@keyframes float {
-  0%, 100% { transform: translateY(0px) translateX(0px) }
-  50% { transform: translateY(-16px) translateX(6px) }
+/* Add these animations to your global CSS or Tailwind config:
+
+@keyframes blob {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, -50px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(50px, 50px) scale(1.05);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }
 */

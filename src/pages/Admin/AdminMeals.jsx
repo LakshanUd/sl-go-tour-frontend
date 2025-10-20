@@ -223,6 +223,10 @@ export default function AdminMeals() {
       toast.error("Name, Category and Price are required");
       return;
     }
+    if (Number(form.price) <= 0) {
+      toast.error("Price must be greater than 0");
+      return;
+    }
 
     try {
       let imageUrl = form.image?.trim() || "";
@@ -501,7 +505,7 @@ export default function AdminMeals() {
 
                   {/* Price / Availability */}
                   <div className="mt-3 flex items-center justify-between">
-                    <div className="text-sm font-medium text-neutral-900">LKR {Number(m.price ?? 0).toFixed(2)}</div>
+                    <div className="text-sm font-medium text-neutral-900">LKR {Number(m.price ?? 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                     <div className="inline-flex items-center gap-1 text-xs">
                       {m.avalability ? (
                         <>
@@ -575,7 +579,7 @@ export default function AdminMeals() {
                       className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                       value={form.catogery}
                       onChange={(e) => setForm((f) => ({ ...f, catogery: e.target.value }))}
-                      placeholder="Sri Lankan / Drinks / …"
+                      placeholder="Main Course / Drinks / …"
                       required
                     />
                   </div>
@@ -584,7 +588,7 @@ export default function AdminMeals() {
                     <label className="block text-sm font-medium mb-1.5">Price (LKR) *</label>
                     <input
                       type="number"
-                      min={0}
+                      min={1}
                       className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
                       value={form.price}
                       onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}

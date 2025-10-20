@@ -8,7 +8,7 @@ import {
   Search,
   Users2,
   BedDouble,
-  DollarSign,
+  Wallet,
   Tag,
   ShoppingCart,
 } from "lucide-react";
@@ -298,7 +298,7 @@ export default function AccommodationCustomer() {
                     <div className="shrink-0 text-right">
                       <div className="text-xs text-neutral-500">Price</div>
                       <div className="font-semibold text-emerald-600">
-                        LKR {Number(a.pricePerNight || 0).toFixed(2)}
+                        LKR {Number(a.pricePerNight || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function AccommodationCustomer() {
                       <Users2 size={16} /> {a.capacity ?? "—"} guests
                     </span>
                     <span className="inline-flex items-center gap-2">
-                      <DollarSign size={16} /> LKR {Number(a.pricePerNight || 0).toFixed(2)}/night
+                      <Wallet size={16} /> LKR {Number(a.pricePerNight || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/night
                     </span>
                     <span className="inline-flex items-center gap-2">
                       <StatusPill status={a.status} />
@@ -369,7 +369,7 @@ export default function AccommodationCustomer() {
                   <span className="font-medium">{bookingAccommodation.name}</span> ({bookingAccommodation.type || "Accommodation"})
                 </div>
                 <div className="text-xs text-neutral-500">
-                  Price: LKR {Number(bookingAccommodation.pricePerNight || 0).toFixed(2)} per night
+                  Price: LKR {Number(bookingAccommodation.pricePerNight || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per night
                 </div>
               </div>
               <div className="space-y-3">
@@ -449,7 +449,7 @@ export default function AccommodationCustomer() {
                 <div className="text-right">
                   <div className="text-xs text-neutral-500">Price</div>
                   <div className="font-semibold text-emerald-600">
-                    LKR {Number(active.pricePerNight || 0).toFixed(2)}
+                    LKR {Number(active.pricePerNight || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
@@ -466,7 +466,7 @@ export default function AccommodationCustomer() {
                     <Users2 size={16} /> {active.capacity ?? "—"} guests
                   </span>
                   <span className="inline-flex items-center gap-2">
-                    <DollarSign size={16} /> LKR {Number(active.pricePerNight || 0).toFixed(2)}/night
+                    <Wallet size={16} /> LKR {Number(active.pricePerNight || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/night
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <StatusPill status={active.status} />

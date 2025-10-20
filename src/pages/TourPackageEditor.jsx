@@ -136,8 +136,10 @@ export default function TourPackageEditor({ mode = "create" }) {
     if (!form.tourPakage_ID.trim()) return "Business ID is required";
     if (!form.name.trim()) return "Name is required";
     if (!TYPES.includes(form.type)) return "Invalid type";
-    if (form.price === "" || isNaN(Number(form.price))) return "Valid price is required";
-    if (!form.duration.trim()) return "Duration is required";
+  if (form.price === "" || isNaN(Number(form.price))) return "Valid price is required";
+  if (Number(form.price) <= 0) return "Price must be greater than 0";
+  if (String(form.duration).trim() === "") return "Duration is required";
+  if (isNaN(Number(form.duration)) || Number(form.duration) <= 0) return "Duration must be a positive number";
     return "";
   }
 
@@ -168,7 +170,7 @@ export default function TourPackageEditor({ mode = "create" }) {
         type: form.type,
         description: form.description || "",
         price: Number(form.price),
-        duration: form.duration.trim(),
+        duration: `${Number(form.duration)} Day`,
         images: imageUrls,
         accommodations: form.accommodations,
         vehicles: form.vehicles,
@@ -294,7 +296,7 @@ export default function TourPackageEditor({ mode = "create" }) {
                 <label className="block text-sm font-medium mb-1.5">Price (LKR) *</label>
                 <input
                   type="number"
-                  min={0}
+                  min={1}
                   value={form.price}
                   onChange={onChange("price")}
                   className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
@@ -306,10 +308,12 @@ export default function TourPackageEditor({ mode = "create" }) {
               <div>
                 <label className="block text-sm font-medium mb-1.5">Duration *</label>
                 <input
+                  type="number"
+                  min={1}
                   value={form.duration}
-                  onChange={onChange("duration")}
+                  onChange={(e) => setForm((f) => ({ ...f, duration: e.target.value }))}
                   className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#09E65A]/30"
-                  placeholder="1 Day / 3 Days / 7 Days…"
+                  placeholder="1 / 2 / 3 Days"
                   required
                 />
               </div>

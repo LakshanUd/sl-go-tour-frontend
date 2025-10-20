@@ -288,7 +288,7 @@ export default function VehicleCustomer() {
                     <div className="shrink-0 text-right">
                       <div className="text-xs text-neutral-500">Price</div>
                       <div className="font-semibold text-emerald-600">
-                        LKR {Number(v.price || 0).toFixed(2)}
+                        LKR {Number(v.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
@@ -361,7 +361,7 @@ export default function VehicleCustomer() {
                   <span className="font-medium">{bookingVehicle.brand}</span> ({bookingVehicle.regNo || bookingVehicle.vehicleID || "Vehicle"})
                 </div>
                 <div className="text-xs text-neutral-500">
-                  Price: LKR {Number(bookingVehicle.price || 0).toFixed(2)} per day
+                  Price: LKR {Number(bookingVehicle.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per day
                 </div>
               </div>
               <div className="space-y-3">
@@ -442,7 +442,7 @@ export default function VehicleCustomer() {
                 <div className="text-right">
                   <div className="text-xs text-neutral-500">Price</div>
                   <div className="font-semibold text-emerald-600">
-                    LKR {Number(active.price || 0).toFixed(2)}
+                    LKR {Number(active.price || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>

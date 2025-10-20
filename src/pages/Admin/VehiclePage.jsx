@@ -281,8 +281,8 @@ export default function VehiclePage() {
       toast.error("seatingCapacity must be at least 1");
       return;
     }
-    if (form.price === "" || !isNumber(form.price) || Number(form.price) < 0) {
-      toast.error("Price must be a number ≥ 0");
+    if (form.price === "" || !isNumber(form.price) || Number(form.price) <= 0) {
+      toast.error("Price must be a number > 0");
       return;
     }
 
@@ -729,7 +729,7 @@ export default function VehiclePage() {
                     <Label>Price (LKR) *</Label>
                     <Input
                       type="number"
-                      min={0}
+                      min={1}
                       step="0.01"
                       value={form.price}
                       onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
